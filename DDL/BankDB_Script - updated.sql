@@ -29,6 +29,7 @@ Create table Customer(
 	Branch_Id varchar(10) references Branch,
 	Address_Id varchar(10) references Address
 	--include check for Customer Id
+	Password varchar(10)
 	);
 
 Create table Account(
@@ -48,8 +49,10 @@ Create table Employee(
 	SSN char(9),
 	Salary numeric(10,2),
 	Address_Id varchar(10) references Address,
-	Branch_Id varchar(10) references Branch
+	Branch_Id varchar(10) references Branch,Password varchar(10)
 	--include check for employee id, ssn
+	check(Position='Manager' or Position='Teller')
+
 	);
 
 Create table Transactions(
