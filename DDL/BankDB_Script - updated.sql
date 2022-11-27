@@ -38,7 +38,7 @@ Create table Account(
 	Balance numeric(13,3),
 	Customer_Id varchar(10) references Customer
 	--include check statement for Type and balance
-	check(balance>0),
+	check(balance>=0),
 	check(type='C' or type='S')
 	);
 
