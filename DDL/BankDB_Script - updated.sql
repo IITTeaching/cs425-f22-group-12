@@ -27,7 +27,7 @@ Create table Customer(
 	Customer_Id varchar(10) primary key,
 	Name varchar(30),
 	Branch_Id varchar(10) references Branch,
-	Address_Id varchar(10) references Address
+	Address_Id varchar(10) references Address,
 	--include check for Customer Id
 	Password varchar(10)
 	);
