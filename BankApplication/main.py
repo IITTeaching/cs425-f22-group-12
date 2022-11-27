@@ -125,10 +125,10 @@ def signin():
         print("SIGN IN")
         id=input("Enter you Id no:")
         pas=input("Enter your Password:")
-        cur.execute("Select * from customer where customer_id='{}' and password='{}'".format(id,pas))
+        cur.execute("Select * from customer where customer_id='{}' and password='{}'".format(id.strip(),pas))
         rec=cur.fetchone()
         if(rec):
-            return id
+            return id.strip()
         else:
             clear()
             logo()
@@ -139,15 +139,35 @@ def signin():
 
 def cust(c_id):
     # retrieve all costumer info from costumer table based on the id provided.
-    cur.execute("SELECT * FROM customer WHERE customer_id = {};".format(c_id))
-    rec = cur.fetchall()
-    info = rec.split()
-    cname = info[1]
-    branch = info[2]
-    address = info[3]
-
-    print("Account Type: ")
-    choose_acc_type(c_id)
+    while True:
+        clear()
+        logo()
+        cur.execute("Select name from customer where customer_id='{}'".format(c_id))
+        rec=cur.fetchone()
+        print(" Welcome Back ",rec[0])
+        print("Choose the below options to manage or create accounts")
+        print("1.Create account")
+        print("2.Deposit money into an account")
+        print("3.Withdraw money from an account")
+        print("4.Transfer money between accounts")
+        print("5.Log out")
+        choose=input("Choose an option here:")
+        if(choose.strip()=='1'):
+            #Kamini implement your create account function here
+            pass
+        elif(choose.strip()=='2'):
+            pass
+        elif(choose.strip()=='3'):
+            pass
+        elif(choose.strip() == '4'):
+            pass
+        elif(choose.strip() == '5'):
+            print()
+            print("You have been signed out")
+            print()
+            return
+        else:
+            print("Choose a valid option")
 
 
     pass
@@ -218,7 +238,8 @@ def clear():
 
     # for mac and linux(here, os.name is 'posix')
     else:
-        _ = system('clear')
+        _ = 1
+        system('clear')
 
 
 while True:
