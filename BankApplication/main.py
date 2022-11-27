@@ -18,7 +18,6 @@ def create_new_id(table_name):
     l=[]
     cur.execute("Select * from {};".format(table_name,))
     rec=cur.fetchall()
-    print(rec)
     for row in rec:
         l.append(int(row[0]))
     l.sort()
@@ -29,7 +28,7 @@ def create_new_id(table_name):
 def choose_b():
     cur.execute("Select branch_id,state,zip from branch natural join address;")
     rec = cur.fetchall()
-    l = []
+    l =[]
     for row in rec:
         l.append(int(row[0]))
         print(row[0], ".", row[1], row[2])
@@ -97,8 +96,12 @@ def create_new():
     except(Exception, psycopg2.DatabaseError) as e:
         print("eeror:",e)
         print("Please Try again")
+
+def signin():
+    print("SIGN IN")
+    uiuuuuuuuuuuuuuuuuuuuu
 # this is the function for the customer interface
-def cust():
+def cust(id):
     pass
 
 while True:
@@ -110,13 +113,14 @@ while True:
     print("4.Exit the application")
     user_in=input("Enter your option here:")
     if(user_in.strip()=='1'):
-        break
+        id=signin()
+        cust(id)
     elif(user_in.strip()=='2'):
         id=create_new()
         if(id==-1):
             pass
         else:
-            cust()
+            cust(id)
     elif(user_in.strip()=='3'):
         break
     elif(user_in.strip()=='4'):
