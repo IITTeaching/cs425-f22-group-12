@@ -119,7 +119,21 @@ def create_new():
         print("Please Try again")
 
 def signin():
-    print("SIGN IN")
+    clear()
+    logo()
+    while(True):
+        print("SIGN IN")
+        id=input("Enter you Id no:")
+        pas=input("Enter your Password:")
+        cur.execute("Select * from customer where customer_id='{}' and password='{}'".format(id,pas))
+        rec=cur.fetchone()
+        if(rec):
+            return id
+        else:
+            clear()
+            logo()
+            print("Invalid ID or PassWord , Please Try again")
+            print()
 # this is the function for the customer interface
 
 
