@@ -120,9 +120,65 @@ def create_new():
 # this is the function for the customer interface
 
 
-def cust(id):
-    # creat an accout (get all info, use excut tool)
+def cust(c_id):
+    # retrieve all costumer info from costumer table based on the id provided.
+    cur.execute("SELECT * FROM customer WHERE customer_id = {};".format(c_id))
+    rec = cur.fetchall()
+    info = rec.split()
+    cname = info[1]
+    branch = info[2]
+    address = info[3]
+
+    print("Account Type: ")
+    choose_acc_type(c_id)
+
+
     pass
+def choose_acc_type(c_id):
+    print()
+    print(" 1.Checking account")
+    print(" 2.Saving account")
+    print(" Press any other key to return to main screen")
+
+    account_type = input("\nPlease enter the account type you want to create: ")
+    if (account_type.strip() == '1'):
+        while True:
+            try:
+                clear()
+                logo()
+                acc_type = "Checking"
+                balance = 0
+                add_id = create_new_id('account')
+                cur.execute("Insert into account values ({},'{}','{}','{}');".format(add_id, acc_type, balance, c_id))
+                conn.commit()
+                print("New checking account successfully created!")
+                return add_id
+            except(Exception, psycopg2.DatabaseError) as e:
+                print("error:", e)
+                print("try again")
+
+    elif (account_type.strip() == '2'):
+        while True:
+            try:
+                clear()
+                logo()
+                acc_type = "Saving"
+                balance = 0
+                add_id = create_new_id('account')
+                cur.execute("Insert into account values ({},'{}','{}','{}');".format(add_id, acc_type, balance, c_id))
+                conn.commit()
+                print("New saving account successfully created!")
+                return add_id
+            except(Exception, psycopg2.DatabaseError) as e:
+                print("error:", e)
+                print("try again")
+    else:
+        return -1
+
+
+def transaction():
+    pass
+
 
 def logo():
     # Logo
