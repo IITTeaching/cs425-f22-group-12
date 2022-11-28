@@ -1,11 +1,12 @@
 import psycopg2
 from os import system, name
+from decimal import Decimal
 
 conn = psycopg2.connect(
     host="localhost",
-    database="project",
+    database="Bank",
     user="postgres",
-    password="")
+    password="030971")
 cur=conn.cursor()
 def ex():
     try:
@@ -115,6 +116,7 @@ def create_new():
         print("\nCongratulations! your account has been created successfully.")
         print("Your c_id is ",c_id)
         return c_id
+        # Need to have a pause here so the user can see their ID before moving to the next screen.
     except(Exception, psycopg2.DatabaseError) as e:
         print("error:", e)
         print("Please Try again")
@@ -141,14 +143,13 @@ def signin():
 
 
 def cust(c_id):
-    # retrieve all costumer info from costumer table based on the id provided.
     while True:
         clear()
         logo()
         cur.execute("Select name from customer where customer_id='{}'".format(c_id))
         rec=cur.fetchone()
         print()
-        print(" Welcome Back ",rec[0])
+        print(" Welcome Back",rec[0])
         print()
         print("Choose from the options below to manage or create accounts")
         print(" 1.Create account")
@@ -164,8 +165,56 @@ def cust(c_id):
             choose_acc_type(c_id)
             pass
         elif(choose.strip()=='2'):
+            cur.execute("SELECT * FROM account WHERE customer_id = '{}';".format(c_id))
+            rec = cur.fetchall()
+            l = []
+            print()
+            print("  ID.   Type       Balance")
+            for row in rec:
+                l.append(int(row[0]))
+                if (row[1] == 'C'):
+                    print(" ", row[0], ".  ", "Checking  ", row[2])
+                elif (row[1] == 'S'):
+                    print(" ", row[0], ".  ", "Saving    ", row[2])
+            l.sort()
+            while True:
+                acc_id = input("\nChoose an account id: ")
+                if (int(acc_id.strip()) <= len(l) and int(acc_id.strip()) > 0):
+                    print()
+                    amount = input("Please choose deposit amount: ")
+                    print()
+                    description = input("Please write a short description: ")
+                    deposit(amount, acc_id, c_id, description)
+                    break
+                else:
+                    print("invalid")
+
             pass
         elif(choose.strip()=='3'):
+            cur.execute("SELECT * FROM account WHERE customer_id = '{}';".format(c_id))
+            rec = cur.fetchall()
+            l = []
+            print()
+            print("  ID.   Type       Balance")
+            for row in rec:
+                l.append(int(row[0]))
+                if (row[1] == 'C'):
+                    print(" ", row[0], ".  ", "Checking  ", row[2])
+                elif (row[1] == 'S'):
+                    print(" ", row[0], ".  ", "Saving    ", row[2])
+            l.sort()
+            while True:
+                acc_id = input("\nChoose an account id: ")
+                if (int(acc_id.strip()) <= len(l) and int(acc_id.strip()) > 0):
+                    print()
+                    amount = input("Please choose withdrawal amount: ")
+                    print()
+                    description = input("Please write a short description: ")
+                    withdraw(amount, acc_id, c_id, description)
+                    break
+                else:
+                    print("invalid")
+
             pass
         elif(choose.strip() == '4'):
             pass
@@ -197,6 +246,7 @@ def choose_acc_type(c_id):
                 cur.execute("Insert into account values ({},'{}',{},{});".format(add_id, acc_type, balance, c_id))
                 conn.commit()
                 print("New checking account successfully created!")
+                # Need to have a pause here so the user can see their ID before moving to the next screen.
                 break
             except(Exception, psycopg2.DatabaseError) as e:
                 print("error:", e)
@@ -221,8 +271,58 @@ def choose_acc_type(c_id):
         return
 
 
-def transaction():
+def deposit(amount, acc_id, c_id, description):
+    try:
+        clear()
+        logo()
+        cur.execute("SELECT * FROM account WHERE account_id = '{}';".format(acc_id))
+        rec = cur.fetchone()
+        t_type = 'Deposit'
+        old_amount = rec[2]
+        new_amount = old_amount + Decimal(amount.strip('"'))
+        cur.execute("UPDATE account SET balance = {} WHERE account_id = '{}'".format(new_amount, acc_id))
+        new_trans(t_type, amount, description, c_id, 'NULL')
+        conn.commit()
+        print("Amount deposited successfully!")
+        pass
+        # Need to have a pause here so the user can see their ID before moving to the next screen.
+    except(Exception, psycopg2.DatabaseError) as e:
+        print("error:", e)
+        print("try again")
+
+
+def withdraw(amount, acc_id, c_id, description):
+    try:
+        clear()
+        logo()
+        cur.execute("SELECT * FROM account WHERE account_id = '{}';".format(acc_id))
+        rec = cur.fetchone()
+        t_type = 'Withdrawl'
+        old_amount = rec[2]
+        new_amount = old_amount - Decimal(amount.strip('"'))
+        cur.execute("UPDATE account SET balance = {} WHERE account_id = '{}'".format(new_amount, acc_id))
+        new_trans(t_type, amount, description, c_id, 'NULL')
+        conn.commit()
+        print("Amount withdrawn successfully!")
+        pass
+        # Need to have a pause here so the user can see their ID before moving to the next screen.
+    except(Exception, psycopg2.DatabaseError) as e:
+        print("error:", e)
+        print("try again")
+
+
+def loc_transfer():
     pass
+
+
+def ext_transfer():
+    pass
+
+
+def new_trans(t_type, amount, description, c_id, e_id):
+    t_id = create_new_id("transactions")
+    cur.execute("Insert into transactions values ('{}','{}',{},'{}','{}');".format(t_id, t_type, amount, description, c_id, e_id))
+    conn.commit()
 
 
 def logo():
