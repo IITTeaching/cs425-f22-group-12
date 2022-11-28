@@ -113,6 +113,7 @@ def create_new():
         clear()
         logo()
         print("\nCongratulations! your account has been created successfully.")
+        print("Your c_id is ",c_id)
         return c_id
     except(Exception, psycopg2.DatabaseError) as e:
         print("error:", e)
