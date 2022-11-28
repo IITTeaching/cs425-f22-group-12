@@ -159,11 +159,13 @@ def cust(c_id):
         print(" 5.Log out")
         print()
         choose=input("Choose an option here: ")
+
         if(choose.strip()=='1'):
             print()
             print("Account Type: ")
             choose_acc_type(c_id)
             pass
+
         elif(choose.strip()=='2'):
             cur.execute("SELECT * FROM account WHERE customer_id = '{}';".format(c_id))
             rec = cur.fetchall()
@@ -190,6 +192,7 @@ def cust(c_id):
                     print("invalid")
 
             pass
+
         elif(choose.strip()=='3'):
             cur.execute("SELECT * FROM account WHERE customer_id = '{}';".format(c_id))
             rec = cur.fetchall()
@@ -216,7 +219,51 @@ def cust(c_id):
                     print("invalid")
 
             pass
+
         elif(choose.strip() == '4'):
+            cur.execute("SELECT * FROM account WHERE customer_id = '{}';".format(c_id))
+            rec = cur.fetchall()
+            l = []
+            print()
+            print("From accounts: ")
+            print("  ID.   Type       Balance")
+            for row in rec:
+                l.append(int(row[0]))
+                if (row[1] == 'C'):
+                    print(" ", row[0], ".  ", "Checking  ", row[2])
+                elif (row[1] == 'S'):
+                    print(" ", row[0], ".  ", "Saving    ", row[2])
+            l.sort()
+
+            cur.execute("SELECT * FROM account;")
+            rec2 = cur.fetchall()
+            l2 = []
+            print()
+            print("To accounts: ")
+            print("  ID.   Type")
+            for row in rec2:
+                l2.append(int(row[0]))
+                if (row[1] == 'C'):
+                    print(" ", row[0], ".  ", "Checking")
+                elif (row[1] == 'S'):
+                    print(" ", row[0], ".  ", "Saving")
+            l2.sort()
+            while True:
+                acc_from_id = input("\nChoose the id of the account you want to transfer the money from: ")
+                acc_to_id = input("\nChoose the id of the account you want to transfer the money to: ")
+                cur.execute("SELECT * FROM account WHERE account_id = '{}';".format(acc_to_id))
+                rec3 = cur.fetchone()
+                c_to_id = rec3[3]
+                if (int(acc_from_id.strip()) <= len(l) and int(acc_from_id.strip()) > 0 and int(acc_to_id.strip()) <= len(l) and int(acc_to_id.strip()) > 0):
+                    print()
+                    amount = input("Please choose transfer amount: ")
+                    print()
+                    description = input("Please write a short description: ")
+                    loc_transfer(acc_from_id, acc_to_id, description, c_id, amount)
+                    break
+                else:
+                    print("invalid")
+
             pass
         elif(choose.strip() == '5'):
             print()
@@ -311,8 +358,32 @@ def withdraw(amount, acc_id, c_id, description):
         print("try again")
 
 
-def loc_transfer():
-    pass
+def loc_transfer(acc_from_id, acc_to_id, description, c_id, amount):
+    try:
+        clear()
+        logo()
+        cur.execute("SELECT * FROM account WHERE account_id = '{}';".format(acc_from_id))
+        rec = cur.fetchone()
+        t_type = 'Transfer'
+        from_acc_old_amount = rec[2]
+        from_acc_new_amount = from_acc_old_amount - Decimal(amount.strip('"'))
+
+        cur.execute("SELECT * FROM account WHERE account_id = '{}';".format(acc_to_id))
+        rec2 = cur.fetchone()
+        to_acc_old_amount = rec2[2]
+        to_acc_new_amount = to_acc_old_amount + Decimal(amount.strip('"'))
+
+        cur.execute("UPDATE account SET balance = {} WHERE account_id = '{}'".format(from_acc_new_amount, acc_from_id))
+        cur.execute("UPDATE account SET balance = {} WHERE account_id = '{}'".format(to_acc_new_amount, acc_to_id))
+
+        new_trans(t_type, amount, description, c_id, 'NULL')
+        conn.commit()
+        print("Amount Transferred successfully!")
+        pass
+        # Need to have a pause here so the user can see their ID before moving to the next screen.
+    except(Exception, psycopg2.DatabaseError) as e:
+        print("error:", e)
+        print("try again")
 
 
 def ext_transfer():
