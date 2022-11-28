@@ -3,7 +3,7 @@ from os import system, name
 
 conn = psycopg2.connect(
     host="localhost",
-    database="Bank",
+    database="project",
     user="postgres",
     password="")
 cur=conn.cursor()
@@ -197,7 +197,7 @@ def choose_acc_type(c_id):
                 cur.execute("Insert into account values ({},'{}',{},{});".format(add_id, acc_type, balance, c_id))
                 conn.commit()
                 print("New checking account successfully created!")
-                pass
+                break
             except(Exception, psycopg2.DatabaseError) as e:
                 print("error:", e)
                 print("try again")
@@ -213,12 +213,12 @@ def choose_acc_type(c_id):
                 cur.execute("Insert into account values ({},'{}',{},{});".format(add_id, acc_type, balance, c_id))
                 conn.commit()
                 print("New saving account successfully created!")
-                pass
+                break
             except(Exception, psycopg2.DatabaseError) as e:
                 print("error:", e)
                 print("try again")
     else:
-        return -1
+        return
 
 
 def transaction():
