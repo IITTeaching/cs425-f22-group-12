@@ -3,7 +3,7 @@ from os import system, name
 
 conn = psycopg2.connect(
     host="localhost",
-    database="project",
+    database="Bank",
     user="postgres",
     password="")
 cur=conn.cursor()
@@ -123,9 +123,11 @@ def signin():
     clear()
     logo()
     while(True):
+        print()
         print("SIGN IN")
-        id=input("Enter you Id no:")
-        pas=input("Enter your Password:")
+        print()
+        id=input(" Enter you ID no: ")
+        pas=input(" Enter your Password: ")
         cur.execute("Select * from customer where customer_id='{}' and password='{}'".format(id.strip(),pas))
         rec=cur.fetchone()
         if(rec):
@@ -145,16 +147,21 @@ def cust(c_id):
         logo()
         cur.execute("Select name from customer where customer_id='{}'".format(c_id))
         rec=cur.fetchone()
+        print()
         print(" Welcome Back ",rec[0])
-        print("Choose the below options to manage or create accounts")
-        print("1.Create account")
-        print("2.Deposit money into an account")
-        print("3.Withdraw money from an account")
-        print("4.Transfer money between accounts")
-        print("5.Log out")
-        choose=input("Choose an option here:")
+        print()
+        print("Choose from the options below to manage or create accounts")
+        print(" 1.Create account")
+        print(" 2.Deposit money into an account")
+        print(" 3.Withdraw money from an account")
+        print(" 4.Transfer money between accounts")
+        print(" 5.Log out")
+        print()
+        choose=input("Choose an option here: ")
         if(choose.strip()=='1'):
-            #Kamini implement your create account function here
+            print()
+            print("Account Type: ")
+            choose_acc_type(c_id)
             pass
         elif(choose.strip()=='2'):
             pass
@@ -184,13 +191,13 @@ def choose_acc_type(c_id):
             try:
                 clear()
                 logo()
-                acc_type = "Checking"
+                acc_type = "C"
                 balance = 0
                 add_id = create_new_id('account')
-                cur.execute("Insert into account values ({},'{}','{}','{}');".format(add_id, acc_type, balance, c_id))
+                cur.execute("Insert into account values ({},'{}',{},{});".format(add_id, acc_type, balance, c_id))
                 conn.commit()
                 print("New checking account successfully created!")
-                return add_id
+                pass
             except(Exception, psycopg2.DatabaseError) as e:
                 print("error:", e)
                 print("try again")
@@ -200,13 +207,13 @@ def choose_acc_type(c_id):
             try:
                 clear()
                 logo()
-                acc_type = "Saving"
+                acc_type = "S"
                 balance = 0
                 add_id = create_new_id('account')
-                cur.execute("Insert into account values ({},'{}','{}','{}');".format(add_id, acc_type, balance, c_id))
+                cur.execute("Insert into account values ({},'{}',{},{});".format(add_id, acc_type, balance, c_id))
                 conn.commit()
                 print("New saving account successfully created!")
-                return add_id
+                pass
             except(Exception, psycopg2.DatabaseError) as e:
                 print("error:", e)
                 print("try again")
