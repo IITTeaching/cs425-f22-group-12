@@ -49,7 +49,8 @@ Create table Employee(
 	SSN char(9),
 	Salary numeric(10,2),
 	Address_Id varchar(10) references Address,
-	Branch_Id varchar(10) references Branch,Password varchar(10)
+	Branch_Id varchar(10) references Branch,
+	Password varchar(10)
 	--include check for employee id, ssn
 	check(Position='Manager' or Position='Teller')
 
