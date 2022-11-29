@@ -164,7 +164,8 @@ def cust(c_id):
         print(" 2.Deposit money into an account")
         print(" 3.Withdraw money from an account")
         print(" 4.Transfer money between accounts")
-        print(" 5.Log out")
+        print(" 5.Transfer money to an external account")
+        print(" 6.Log out")
         print()
         choose=input("Choose an option here: ")
 
@@ -177,6 +178,8 @@ def cust(c_id):
             l=show_accounts(c_id)
             while True:
                 acc_id = input("\nChoose an account id: ")
+                # this doesn't work if the ID of the account is larger than the amount of accounts the user has
+
                 if (int(acc_id.strip()) <= len(l) and int(acc_id.strip()) > 0):
                     print()
                     amount = input("Please choose deposit amount: ")
@@ -241,7 +244,44 @@ def cust(c_id):
                     print("Invalid Id's have been entered, returning to main screen")
                     break
 
-        elif(choose.strip() == '5'):
+            pass
+
+        elif (choose.strip() == '5'):
+            cur.execute("SELECT * FROM account WHERE customer_id = '{}';".format(c_id))
+            rec = cur.fetchall()
+            l = []
+            print()
+            print("From accounts: ")
+            print("  ID.   Type       Balance")
+            for row in rec:
+                l.append(int(row[0]))
+                if (row[1] == 'C'):
+                    print(" ", row[0], ".  ", "Checking  ", row[2])
+                elif (row[1] == 'S'):
+                    print(" ", row[0], ".  ", "Saving    ", row[2])
+            l.sort()
+
+            while True:
+                acc_from_id = input("\nChoose the id of the account you want to transfer the money from: ")
+                if (int(acc_from_id.strip()) <= len(l) and int(acc_from_id.strip()) > 0):
+                    print()
+                    bank = input("Please enter which bank you want to transfer funds to: ")
+                    print()
+                    account_number = input("Please enter the account number: ")
+                    print()
+                    routing_number = input("Please enter the routing number: ")
+                    print()
+                    amount = input("Please choose transfer amount: ")
+                    print()
+                    description = input("Please write a short description: ")
+                    ext_transfer(acc_from_id, c_id, bank, account_number, routing_number, amount, description)
+                    break
+                else:
+                    print("invalid")
+
+            pass
+
+        elif(choose.strip() == '6'):
             print()
             print("You have been signed out")
             print()
@@ -353,14 +393,31 @@ def loc_transfer(acc_from_id, acc_to_id, description, c_id, amount):
         conn.commit()
         print("Amount Transferred successfully!")
         pass
-        # Need to have a pause here so the user can see their ID before moving to the next screen.
+        # Need to have a pause here so the user can see success message before moving to the next screen.
     except(Exception, psycopg2.DatabaseError) as e:
         print("error:", e)
         print("try again")
 
 
-def ext_transfer():
-    pass
+def ext_transfer(acc_from_id, c_id, bank, account_number, routing_number, amount, description):
+    try:
+        clear()
+        logo()
+        cur.execute("SELECT * FROM account WHERE account_id = '{}';".format(acc_from_id))
+        rec = cur.fetchone()
+        t_type = 'ExtTransfer'
+        from_acc_old_amount = rec[2]
+        from_acc_new_amount = from_acc_old_amount - Decimal(amount.strip('"'))
+
+        cur.execute("UPDATE account SET balance = {} WHERE account_id = '{}'".format(from_acc_new_amount, acc_from_id))
+        new_ext_transfer_transaction(t_type, amount, description, c_id, 'NULL', acc_from_id, bank, account_number, routing_number)
+        conn.commit()
+        print("Amount Transferred successfully!")
+        pass
+        # Need to have a pause here so the user can see success message before moving to the next screen.
+    except(Exception, psycopg2.DatabaseError) as e:
+        print("error:", e)
+        print("try again")
 
 
 def new_trans(t_type, amount, description, c_id, e_id,account_from_id,account_to_id,flag='T'):
@@ -371,6 +428,23 @@ def new_trans(t_type, amount, description, c_id, e_id,account_from_id,account_to
     else:
         pass
     conn.commit()
+
+
+def new_transfer_transaction(t_type, amount, description, c_id, e_id, acc_from_id, acc_to_id):
+    t_id = create_new_id("transactions")
+    cur.execute("INSERT INTO transactions VALUES ('{}','{}',{},'{}','{}');".format(t_id, t_type, amount, description, c_id, e_id))
+    cur.execute("INSERT INTO to_from VALUES('{}','{}','{}')".format(t_id, acc_from_id, acc_to_id))
+    conn.commit()
+
+
+def new_ext_transfer_transaction(t_type, amount, description, c_id, e_id, acc_from_id, bank, account_number, routing_number):
+    t_id = create_new_id("transactions")
+    cur.execute(
+        "INSERT INTO transactions VALUES ('{}','{}',{},'{}','{}');".format(t_id, t_type, amount, description, c_id,
+                                                                           e_id))
+    cur.execute("INSERT INTO to_from_ext VALUES('{}','{}','{}','{}','{}')".format(t_id, acc_from_id, bank, account_number, routing_number))
+    conn.commit()
+
 
 
 def logo():

@@ -5,6 +5,7 @@ DROP TABLE IF EXISTS Account CASCADE;
 DROP TABLE IF EXISTS Employee CASCADE;
 DROP TABLE IF EXISTS Transactions CASCADE;
 DROP TABLE IF EXISTS to_from CASCADE;
+DROP TABLE IF EXISTS to_from_ext CASCADE;
 
 
 Create table Address(
@@ -65,7 +66,7 @@ Create table Transactions(
 	Employee_Id varchar(10) references Employee,
 	day date default current_timestamp,
 	--include check for amount and customer,employee
-	check(Type='Deposit' or Type='Withdrawl' or Type='Transfer')
+	check(Type='Deposit' or Type='Withdrawl' or Type='Transfer' or Type='ExtTransfer')
 	);
 
 Create table to_from(
@@ -73,4 +74,13 @@ Create table to_from(
 	From_account varchar(10) references Account(Account_Id),
 	To_account varchar(10) references Account(Account_Id),
 	primary key (Transaction_Id,From_account,To_account)
+	);
+	
+Create table to_from_ext(
+	Transaction_Id varchar(10) references Transactions,
+	From_account varchar(10) references Account(Account_Id),
+	To_bank varchar(30),
+	Account_number VARCHAR(12),
+	Routing_number varchar(9),
+	primary key (Transaction_Id,From_account,To_bank, Account_number, Routing_number)
 	);
