@@ -180,7 +180,7 @@ def cust(c_id):
                 acc_id = input("\nChoose an account id: ")
                 # this doesn't work if the ID of the account is larger than the amount of accounts the user has
 
-                if (int(acc_id.strip()) <= len(l) and int(acc_id.strip()) > 0):
+                if (int(acc_id.strip()) in l):
                     print()
                     amount = input("Please choose deposit amount: ")
                     print()
@@ -195,7 +195,7 @@ def cust(c_id):
             l=show_accounts(c_id)
             while True:
                 acc_id = input("\nChoose an account id: ")
-                if (int(acc_id.strip()) <= len(l) and int(acc_id.strip()) > 0):
+                if (int(acc_id.strip()) in l):
                     print()
                     amount = input("Please choose withdrawal amount: ")
                     print()
@@ -229,7 +229,7 @@ def cust(c_id):
                         print(" ", row[0], ".  ", "Saving")
                 l2.sort()
                 acc_to_id = input("\nChoose the id of the account you want to transfer the money to: ")
-                if (int(acc_from_id.strip()) <= len(l) and int(acc_from_id.strip()) > 0 and int(acc_to_id.strip()) <= len(l) and int(acc_to_id.strip()) > 0):
+                if (int(acc_from_id.strip()) in l and int(acc_to_id.strip()) in l2):
                     print()
                     amount = input("Please choose transfer amount: ")
                     print()
