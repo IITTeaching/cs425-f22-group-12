@@ -62,7 +62,8 @@ Create table Transactions(
 	Amount numeric(13,3),
 	Description varchar(30),
 	Customer_Id varchar(10) references Customer,
-	Employee_Id varchar(10) references Employee
+	Employee_Id varchar(10) references Employee,
+	day date default current_timestamp,
 	--include check for amount and customer,employee
 	check(Type='Deposit' or Type='Withdrawl' or Type='Transfer')
 	);

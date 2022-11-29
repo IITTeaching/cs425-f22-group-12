@@ -1,21 +1,15 @@
+import decimal
+
 import psycopg2
 from os import system, name
 from decimal import Decimal
 
 conn = psycopg2.connect(
     host="localhost",
-    database="Bank",
+    database="project",
     user="postgres",
     password="030971")
 cur=conn.cursor()
-def ex():
-    try:
-        cur.execute("insert into m values(2,'bye');")
-        print("it worked")
-        cur.close()
-        conn.commit()
-    except(Exception,psycopg2.DatabaseError) as e:
-        print(e)
 def create_new_id(table_name):
     l=[]
     cur.execute("Select * from {};".format(table_name,))
@@ -141,6 +135,20 @@ def signin():
             print()
 # this is the function for the customer interface
 
+def show_accounts(c_id):
+    cur.execute("SELECT * FROM account WHERE customer_id = '{}';".format(c_id))
+    rec = cur.fetchall()
+    l = []
+    print()
+    print("  ID.   Type       Balance")
+    for row in rec:
+        l.append(int(row[0]))
+        if (row[1] == 'C'):
+            print(" ", row[0], ".  ", "Checking  ", row[2])
+        elif (row[1] == 'S'):
+            print(" ", row[0], ".  ", "Saving    ", row[2])
+    l.sort()
+    return l;
 
 def cust(c_id):
     while True:
@@ -164,21 +172,9 @@ def cust(c_id):
             print()
             print("Account Type: ")
             choose_acc_type(c_id)
-            pass
 
         elif(choose.strip()=='2'):
-            cur.execute("SELECT * FROM account WHERE customer_id = '{}';".format(c_id))
-            rec = cur.fetchall()
-            l = []
-            print()
-            print("  ID.   Type       Balance")
-            for row in rec:
-                l.append(int(row[0]))
-                if (row[1] == 'C'):
-                    print(" ", row[0], ".  ", "Checking  ", row[2])
-                elif (row[1] == 'S'):
-                    print(" ", row[0], ".  ", "Saving    ", row[2])
-            l.sort()
+            l=show_accounts(c_id)
             while True:
                 acc_id = input("\nChoose an account id: ")
                 if (int(acc_id.strip()) <= len(l) and int(acc_id.strip()) > 0):
@@ -189,82 +185,62 @@ def cust(c_id):
                     deposit(amount, acc_id, c_id, description)
                     break
                 else:
-                    print("invalid")
-
-            pass
+                    print("Invalid Id's have been entered, returning to main screen")
+                    break
 
         elif(choose.strip()=='3'):
-            cur.execute("SELECT * FROM account WHERE customer_id = '{}';".format(c_id))
-            rec = cur.fetchall()
-            l = []
-            print()
-            print("  ID.   Type       Balance")
-            for row in rec:
-                l.append(int(row[0]))
-                if (row[1] == 'C'):
-                    print(" ", row[0], ".  ", "Checking  ", row[2])
-                elif (row[1] == 'S'):
-                    print(" ", row[0], ".  ", "Saving    ", row[2])
-            l.sort()
+            l=show_accounts(c_id)
             while True:
                 acc_id = input("\nChoose an account id: ")
                 if (int(acc_id.strip()) <= len(l) and int(acc_id.strip()) > 0):
                     print()
                     amount = input("Please choose withdrawal amount: ")
                     print()
+                    if(check_balance(amount,acc_id)==-1):
+                        print("Amount to be withdrawn greater than account balance")
+                        print(("Returning to home screen"))
+                        break
                     description = input("Please write a short description: ")
                     withdraw(amount, acc_id, c_id, description)
                     break
                 else:
-                    print("invalid")
-
+                    print("Invalid Id's have been entered, returning to main screen")
+                    break
             pass
 
         elif(choose.strip() == '4'):
-            cur.execute("SELECT * FROM account WHERE customer_id = '{}';".format(c_id))
-            rec = cur.fetchall()
-            l = []
-            print()
-            print("From accounts: ")
-            print("  ID.   Type       Balance")
-            for row in rec:
-                l.append(int(row[0]))
-                if (row[1] == 'C'):
-                    print(" ", row[0], ".  ", "Checking  ", row[2])
-                elif (row[1] == 'S'):
-                    print(" ", row[0], ".  ", "Saving    ", row[2])
-            l.sort()
-
-            cur.execute("SELECT * FROM account;")
-            rec2 = cur.fetchall()
-            l2 = []
-            print()
-            print("To accounts: ")
-            print("  ID.   Type")
-            for row in rec2:
-                l2.append(int(row[0]))
-                if (row[1] == 'C'):
-                    print(" ", row[0], ".  ", "Checking")
-                elif (row[1] == 'S'):
-                    print(" ", row[0], ".  ", "Saving")
-            l2.sort()
             while True:
+                l = show_accounts(c_id)
                 acc_from_id = input("\nChoose the id of the account you want to transfer the money from: ")
+                cur.execute("SELECT * FROM account;")
+                rec2 = cur.fetchall()
+                l2 = []
+                print()
+                print("To accounts: ")
+                print("  ID.   Type")
+                for row in rec2:
+                    l2.append(int(row[0]))
+                    if (row[1] == 'C'):
+                        print(" ", row[0], ".  ", "Checking")
+                    elif (row[1] == 'S'):
+                        print(" ", row[0], ".  ", "Saving")
+                l2.sort()
                 acc_to_id = input("\nChoose the id of the account you want to transfer the money to: ")
-                cur.execute("SELECT * FROM account WHERE account_id = '{}';".format(acc_to_id))
-                rec3 = cur.fetchone()
-                c_to_id = rec3[3]
                 if (int(acc_from_id.strip()) <= len(l) and int(acc_from_id.strip()) > 0 and int(acc_to_id.strip()) <= len(l) and int(acc_to_id.strip()) > 0):
                     print()
                     amount = input("Please choose transfer amount: ")
                     print()
+                    if (check_balance(amount, acc_from_id)):
+                        print("Amount to be withdrawn greater than account balance")
+                        print(("Returning to home screen"))
+                        break
                     description = input("Please write a short description: ")
                     loc_transfer(acc_from_id, acc_to_id, description, c_id, amount)
                     break
                 else:
-                    print("invalid")
+                    print("Invalid Id's have been entered, returning to main screen")
+                    break
 
-            pass
         elif(choose.strip() == '5'):
             print()
             print("You have been signed out")
@@ -273,8 +249,6 @@ def cust(c_id):
         else:
             print("Choose a valid option")
 
-
-    pass
 def choose_acc_type(c_id):
     print()
     print(" 1.Checking account")
@@ -283,39 +257,41 @@ def choose_acc_type(c_id):
 
     account_type = input("\nPlease enter the account type you want to create: ")
     if (account_type.strip() == '1'):
-        while True:
-            try:
-                clear()
-                logo()
-                acc_type = "C"
-                balance = 0
-                add_id = create_new_id('account')
-                cur.execute("Insert into account values ({},'{}',{},{});".format(add_id, acc_type, balance, c_id))
-                conn.commit()
-                print("New checking account successfully created!with Id: ",add_id)
-                break
-            except(Exception, psycopg2.DatabaseError) as e:
-                print("error:", e)
-                print("try again")
+        try:
+            clear()
+            logo()
+            acc_type = "C"
+            balance = 0
+            add_id = create_new_id('account')
+            cur.execute("Insert into account values ({},'{}',{},{});".format(add_id, acc_type, balance, c_id))
+            conn.commit()
+            print("New checking account successfully created!with Id: ",add_id)
+        except(Exception, psycopg2.DatabaseError) as e:
+            print("error:", e)
+            print("try again")
 
     elif (account_type.strip() == '2'):
-        while True:
-            try:
-                clear()
-                logo()
-                acc_type = "S"
-                balance = 0
-                add_id = create_new_id('account')
-                cur.execute("Insert into account values ({},'{}',{},{});".format(add_id, acc_type, balance, c_id))
-                conn.commit()
-                print("New saving account successfully created! with Id: ",add_id)
-                break
-            except(Exception, psycopg2.DatabaseError) as e:
-                print("error:", e)
-                print("try again")
+        try:
+            clear()
+            logo()
+            acc_type = "S"
+            balance = 0
+            add_id = create_new_id('account')
+            cur.execute("Insert into account values ({},'{}',{},{});".format(add_id, acc_type, balance, c_id))
+            conn.commit()
+            print("New saving account successfully created! with Id: ",add_id)
+        except(Exception, psycopg2.DatabaseError) as e:
+            print("error:", e)
+            print("try again")
     else:
         return
 
+def check_balance(amount,ac_id):
+    cur.execute("Select Balance from account where account_id='{}'".format(ac_id))
+    rec=cur.fetchone()
+    if(decimal.Decimal(amount.strip())>decimal.Decimal(rec[0])):
+        return -1
+    return 0
 
 def deposit(amount, acc_id, c_id, description):
     try:
@@ -327,7 +303,7 @@ def deposit(amount, acc_id, c_id, description):
         old_amount = rec[2]
         new_amount = old_amount + Decimal(amount.strip('"'))
         cur.execute("UPDATE account SET balance = {} WHERE account_id = '{}'".format(new_amount, acc_id))
-        new_trans(t_type, amount, description, c_id, 'NULL')
+        new_trans(t_type, amount, description,c_id,'NULL',acc_id,acc_id)
         conn.commit()
         print("Amount deposited successfully!")
         pass
@@ -347,7 +323,7 @@ def withdraw(amount, acc_id, c_id, description):
         old_amount = rec[2]
         new_amount = old_amount - Decimal(amount.strip('"'))
         cur.execute("UPDATE account SET balance = {} WHERE account_id = '{}'".format(new_amount, acc_id))
-        new_trans(t_type, amount, description, c_id, 'NULL')
+        new_trans(t_type, amount, description, c_id, 'NULL',acc_id,acc_id)
         conn.commit()
         print("Amount withdrawn successfully!")
         pass
@@ -366,16 +342,14 @@ def loc_transfer(acc_from_id, acc_to_id, description, c_id, amount):
         t_type = 'Transfer'
         from_acc_old_amount = rec[2]
         from_acc_new_amount = from_acc_old_amount - Decimal(amount.strip('"'))
-
+        cur.execute("UPDATE account SET balance = {} WHERE account_id = '{}'".format(from_acc_new_amount, acc_from_id))
+        conn.commit()
         cur.execute("SELECT * FROM account WHERE account_id = '{}';".format(acc_to_id))
         rec2 = cur.fetchone()
         to_acc_old_amount = rec2[2]
         to_acc_new_amount = to_acc_old_amount + Decimal(amount.strip('"'))
-
-        cur.execute("UPDATE account SET balance = {} WHERE account_id = '{}'".format(from_acc_new_amount, acc_from_id))
         cur.execute("UPDATE account SET balance = {} WHERE account_id = '{}'".format(to_acc_new_amount, acc_to_id))
-
-        new_trans(t_type, amount, description, c_id, 'NULL')
+        new_trans(t_type, amount, description, c_id, 'NULL',acc_from_id,acc_to_id,'T')
         conn.commit()
         print("Amount Transferred successfully!")
         pass
@@ -389,9 +363,13 @@ def ext_transfer():
     pass
 
 
-def new_trans(t_type, amount, description, c_id, e_id):
+def new_trans(t_type, amount, description, c_id, e_id,account_from_id,account_to_id,flag='T'):
     t_id = create_new_id("transactions")
     cur.execute("Insert into transactions values ('{}','{}',{},'{}','{}');".format(t_id, t_type, amount, description, c_id, e_id))
+    if(flag=='T'):
+        cur.execute("Insert into to_from values('{}','{}','{}');".format(t_id,account_from_id,account_to_id))
+    else:
+        pass
     conn.commit()
 
 
