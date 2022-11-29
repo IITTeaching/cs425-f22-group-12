@@ -6,9 +6,9 @@ from decimal import Decimal
 
 conn = psycopg2.connect(
     host="localhost",
-    database="project",
+    database="Bank",
     user="postgres",
-    password="030971")
+    password="")
 cur=conn.cursor()
 def create_new_id(table_name):
     l=[]
@@ -168,22 +168,25 @@ def cust(c_id):
         print(" 6.Log out")
         print()
         choose=input("Choose an option here: ")
-
+        # CREATING A NEW ACCOUNT
         if(choose.strip()=='1'):
             print()
             print("Account Type: ")
             choose_acc_type(c_id)
 
+        # DEPOSIT
         elif(choose.strip()=='2'):
             l=show_accounts(c_id)
             while True:
                 acc_id = input("\nChoose an account id: ")
-                # this doesn't work if the ID of the account is larger than the amount of accounts the user has
-
                 if (int(acc_id.strip()) in l):
                     print()
                     amount = input("Please choose deposit amount: ")
                     print()
+                    if (decimal.Decimal(amount.strip()) <= 0):
+                        print("Amount to be deposited is less than or equals to $0")
+                        print(("Returning to home screen"))
+                        break
                     description = input("Please write a short description: ")
                     deposit(amount, acc_id, c_id, description)
                     break
@@ -191,6 +194,7 @@ def cust(c_id):
                     print("Invalid Id's have been entered, returning to main screen")
                     break
 
+        # WITHDRAW
         elif(choose.strip()=='3'):
             l=show_accounts(c_id)
             while True:
@@ -211,6 +215,7 @@ def cust(c_id):
                     break
             pass
 
+        # INTERNAL TRANSFER
         elif(choose.strip() == '4'):
             while True:
                 l = show_accounts(c_id)
@@ -246,6 +251,7 @@ def cust(c_id):
 
             pass
 
+        # EXTERNAL TRANSFER
         elif (choose.strip() == '5'):
             cur.execute("SELECT * FROM account WHERE customer_id = '{}';".format(c_id))
             rec = cur.fetchall()
@@ -263,16 +269,20 @@ def cust(c_id):
 
             while True:
                 acc_from_id = input("\nChoose the id of the account you want to transfer the money from: ")
-                if (int(acc_from_id.strip()) <= len(l) and int(acc_from_id.strip()) > 0):
+                if (int(acc_from_id.strip()) in l):
                     print()
                     bank = input("Please enter which bank you want to transfer funds to: ")
                     print()
-                    account_number = input("Please enter the account number: ")
+                    account_number = input("Please enter the account number (12 Digits): ")
                     print()
-                    routing_number = input("Please enter the routing number: ")
+                    routing_number = input("Please enter the routing number (9 Digits): ")
                     print()
                     amount = input("Please choose transfer amount: ")
                     print()
+                    if (check_balance(amount, acc_from_id)):
+                        print("Transfer amount is greater than account balance")
+                        print(("Returning to home screen"))
+                        break
                     description = input("Please write a short description: ")
                     ext_transfer(acc_from_id, c_id, bank, account_number, routing_number, amount, description)
                     break
@@ -281,6 +291,7 @@ def cust(c_id):
 
             pass
 
+        # LOG OUT
         elif(choose.strip() == '6'):
             print()
             print("You have been signed out")
