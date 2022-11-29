@@ -332,8 +332,7 @@ def choose_acc_type(c_id):
                 add_id = create_new_id('account')
                 cur.execute("Insert into account values ({},'{}',{},{});".format(add_id, acc_type, balance, c_id))
                 conn.commit()
-                print("New checking account successfully created!")
-                # Need to have a pause here so the user can see their ID before moving to the next screen.
+                print("New checking account successfully created!with Id: ",add_id)
                 break
             except(Exception, psycopg2.DatabaseError) as e:
                 print("error:", e)
@@ -349,7 +348,7 @@ def choose_acc_type(c_id):
                 add_id = create_new_id('account')
                 cur.execute("Insert into account values ({},'{}',{},{});".format(add_id, acc_type, balance, c_id))
                 conn.commit()
-                print("New saving account successfully created!")
+                print("New saving account successfully created! with Id: ",add_id)
                 break
             except(Exception, psycopg2.DatabaseError) as e:
                 print("error:", e)
