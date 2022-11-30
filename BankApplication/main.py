@@ -515,3 +515,6 @@ while True:
 
 conn.close()
 print("Connection closed")
+
+# add curr balance
+# add intrest function
