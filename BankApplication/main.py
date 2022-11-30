@@ -6,7 +6,7 @@ from decimal import Decimal
 
 conn = psycopg2.connect(
     host="localhost",
-    database="Bank",
+    database="project",
     user="postgres",
     password="")
 cur=conn.cursor()
@@ -188,7 +188,7 @@ def cust(c_id):
                         print(("Returning to home screen"))
                         break
                     description = input("Please write a short description: ")
-                    deposit(amount, acc_id, c_id, description)
+                    deposit(amount, acc_id,description,c_id)
                     break
                 else:
                     print("Invalid Id's have been entered, returning to main screen")
@@ -208,7 +208,7 @@ def cust(c_id):
                         print(("Returning to home screen"))
                         break
                     description = input("Please write a short description: ")
-                    withdraw(amount, acc_id, c_id, description)
+                    withdraw(amount, acc_id,description,c_id)
                     break
                 else:
                     print("Invalid Id's have been entered, returning to main screen")
@@ -243,7 +243,7 @@ def cust(c_id):
                         print(("Returning to home screen"))
                         break
                     description = input("Please write a short description: ")
-                    loc_transfer(acc_from_id, acc_to_id, description, c_id, amount)
+                    loc_transfer(acc_from_id, acc_to_id, description,amount,c_id)
                     break
                 else:
                     print("Invalid Id's have been entered, returning to main screen")
@@ -344,7 +344,7 @@ def check_balance(amount,ac_id):
         return -1
     return 0
 
-def deposit(amount, acc_id, c_id, description):
+def deposit(amount, acc_id,description,c_id='NULL',e_id='NULL'):
     try:
         clear()
         logo()
@@ -354,7 +354,7 @@ def deposit(amount, acc_id, c_id, description):
         old_amount = rec[2]
         new_amount = old_amount + Decimal(amount.strip('"'))
         cur.execute("UPDATE account SET balance = {} WHERE account_id = '{}'".format(new_amount, acc_id))
-        new_trans(t_type, amount, description,c_id,'NULL',acc_id,acc_id)
+        new_trans(t_type, amount, description,c_id,e_id,acc_id,acc_id,new_amount)
         conn.commit()
         print("Amount deposited successfully!")
         pass
@@ -364,7 +364,7 @@ def deposit(amount, acc_id, c_id, description):
         print("try again")
 
 
-def withdraw(amount, acc_id, c_id, description):
+def withdraw(amount, acc_id, description,c_id='NULL',e_id='NULL'):
     try:
         clear()
         logo()
@@ -374,7 +374,7 @@ def withdraw(amount, acc_id, c_id, description):
         old_amount = rec[2]
         new_amount = old_amount - Decimal(amount.strip('"'))
         cur.execute("UPDATE account SET balance = {} WHERE account_id = '{}'".format(new_amount, acc_id))
-        new_trans(t_type, amount, description, c_id, 'NULL',acc_id,acc_id)
+        new_trans(t_type, amount, description, c_id,e_id,acc_id,acc_id,new_amount)
         conn.commit()
         print("Amount withdrawn successfully!")
         pass
@@ -384,7 +384,7 @@ def withdraw(amount, acc_id, c_id, description):
         print("try again")
 
 
-def loc_transfer(acc_from_id, acc_to_id, description, c_id, amount):
+def loc_transfer(acc_from_id, acc_to_id, description,amount,c_id='NULL',e_id='NULL'):
     try:
         clear()
         logo()
@@ -400,10 +400,9 @@ def loc_transfer(acc_from_id, acc_to_id, description, c_id, amount):
         to_acc_old_amount = rec2[2]
         to_acc_new_amount = to_acc_old_amount + Decimal(amount.strip('"'))
         cur.execute("UPDATE account SET balance = {} WHERE account_id = '{}'".format(to_acc_new_amount, acc_to_id))
-        new_trans(t_type, amount, description, c_id, 'NULL',acc_from_id,acc_to_id,'T')
+        new_trans(t_type, amount, description, c_id,e_id,acc_from_id,acc_to_id,from_acc_new_amount)
         conn.commit()
         print("Amount Transferred successfully!")
-        pass
         # Need to have a pause here so the user can see success message before moving to the next screen.
     except(Exception, psycopg2.DatabaseError) as e:
         print("error:", e)
@@ -421,19 +420,18 @@ def ext_transfer(acc_from_id, c_id, bank, account_number, routing_number, amount
         from_acc_new_amount = from_acc_old_amount - Decimal(amount.strip('"'))
 
         cur.execute("UPDATE account SET balance = {} WHERE account_id = '{}'".format(from_acc_new_amount, acc_from_id))
-        new_ext_transfer_transaction(t_type, amount, description, c_id, 'NULL', acc_from_id, bank, account_number, routing_number)
+        new_ext_transfer_transaction(t_type, amount, description, c_id, 'NULL', acc_from_id, bank, account_number, routing_number,from_acc_new_amount)
         conn.commit()
         print("Amount Transferred successfully!")
-        pass
         # Need to have a pause here so the user can see success message before moving to the next screen.
     except(Exception, psycopg2.DatabaseError) as e:
         print("error:", e)
         print("try again")
 
 
-def new_trans(t_type, amount, description, c_id, e_id,account_from_id,account_to_id,flag='T'):
+def new_trans(t_type, amount, description, c_id, e_id,account_from_id,account_to_id,currbalance,flag='T'):
     t_id = create_new_id("transactions")
-    cur.execute("Insert into transactions values ('{}','{}',{},'{}','{}');".format(t_id, t_type, amount, description, c_id, e_id))
+    cur.execute("Insert into transactions values ('{}','{}',{},'{}','{}','{}','{}');".format(t_id, t_type, amount, description, c_id, e_id,currbalance))
     if(flag=='T'):
         cur.execute("Insert into to_from values('{}','{}','{}');".format(t_id,account_from_id,account_to_id))
     else:
@@ -441,18 +439,18 @@ def new_trans(t_type, amount, description, c_id, e_id,account_from_id,account_to
     conn.commit()
 
 
-def new_transfer_transaction(t_type, amount, description, c_id, e_id, acc_from_id, acc_to_id):
+def new_transfer_transaction(t_type, amount, description, c_id, e_id, acc_from_id, acc_to_id,currbalance):
     t_id = create_new_id("transactions")
-    cur.execute("INSERT INTO transactions VALUES ('{}','{}',{},'{}','{}');".format(t_id, t_type, amount, description, c_id, e_id))
+    cur.execute("INSERT INTO transactions VALUES ('{}','{}',{},'{}','{}');".format(t_id, t_type, amount, description, c_id, e_id,currbalance))
     cur.execute("INSERT INTO to_from VALUES('{}','{}','{}')".format(t_id, acc_from_id, acc_to_id))
     conn.commit()
 
 
-def new_ext_transfer_transaction(t_type, amount, description, c_id, e_id, acc_from_id, bank, account_number, routing_number):
+def new_ext_transfer_transaction(t_type, amount, description, c_id, e_id, acc_from_id, bank, account_number, routing_number,currbalance):
     t_id = create_new_id("transactions")
     cur.execute(
-        "INSERT INTO transactions VALUES ('{}','{}',{},'{}','{}');".format(t_id, t_type, amount, description, c_id,
-                                                                           e_id))
+        "INSERT INTO transactions VALUES ('{}','{}',{},'{}','{}','{}',{});".format(t_id, t_type, amount, description, c_id,
+                                                                           e_id,currbalance))
     cur.execute("INSERT INTO to_from_ext VALUES('{}','{}','{}','{}','{}')".format(t_id, acc_from_id, bank, account_number, routing_number))
     conn.commit()
 
@@ -482,6 +480,96 @@ def clear():
         _ = 1
         system('clear')
 
+def emp_signin():
+    clear()
+    logo()
+    while (True):
+        print()
+        print("EMPLOYEE SIGN IN")
+        print()
+        id = input(" Enter you ID no: ")
+        pas = input(" Enter your Password: ")
+        cur.execute("Select * from employee where employee_id='{}' and password='{}'".format(id.strip(), pas))
+        rec = cur.fetchone()
+        if (rec):
+            return id.strip()
+        else:
+            clear()
+            logo()
+            print("Invalid ID or PassWord , Please Try again")
+            print()
+
+def choose_any_account():
+    cur.execute("SELECT * FROM account;")
+    rec = cur.fetchall()
+    l = []
+    print()
+    print("  ID.   Type       Balance")
+    for row in rec:
+        l.append(int(row[0]))
+        if (row[1] == 'C'):
+            print(" ", row[0], ".  ", "Checking  ", row[2])
+        elif (row[1] == 'S'):
+            print(" ", row[0], ".  ", "Saving    ", row[2])
+    l.sort()
+    return l;
+
+def emp(e_id):
+    cur.execute("Select name,position from employee where employee_id='{}'".format(e_id))
+    rec = cur.fetchone()
+    manager = False
+    if (rec[1] == "Manager"):
+        manager = True
+    while True:
+        clear()
+        logo()
+        print()
+        print(" Welcome Back",rec[0],"   Position:",rec[1])
+        print()
+        print("Choose from the options below to manage or create accounts")
+        print(" 1.Execute deposit from any account")
+        print(" 2.Execute withdrawal from any account")
+        print(" 3.Execute transfer between any two accounts")
+        print(" 4.Execute external transfer between accounts and external account")
+        print(" 5.View statment for an account(MANAGER ONLY)")
+        print(" 6.View pending transactions for an account(MANAGER ONLY)")
+        print(" 7.Log out")
+        print()
+        choose=input("Choose an option here: ")
+        if(choose.strip()=='1'):
+            print()
+            l=choose_any_account()
+            while True:
+                acc_id = input("\nChoose an account id: ")
+                if (int(acc_id.strip()) in l):
+                    print()
+                    amount = input("Please choose deposit amount: ")
+                    print()
+                    if (decimal.Decimal(amount.strip()) <= 0):
+                        print("Amount to be deposited is less than or equals to $0")
+                        print(("Returning to home screen"))
+                        break
+                    description = input("Please write a short description: ")
+                    deposit(amount, acc_id,description,e_id=e_id)
+                    break
+                else:
+                    print("Invalid Id's have been entered, returning to main screen")
+                    break
+        elif(choose.strip()=='2'):
+            pass
+        elif (choose.strip() == '3'):
+            pass
+        elif (choose.strip() == '4'):
+            pass
+        elif (choose.strip() == '5'):
+            pass
+        elif (choose.strip() == '6'):
+            pass
+        elif (choose.strip() == '7'):
+            print("LOGGING OUT...")
+            break
+        else:
+            print("INVALID OPTION")
 
 while True:
 
@@ -506,7 +594,8 @@ while True:
         else:
             cust(id)
     elif(user_in.strip()=='3'):
-        break
+        id=emp_signin()
+        emp(id)
     elif(user_in.strip()=='4'):
         print("Please come again!")
         exit()
