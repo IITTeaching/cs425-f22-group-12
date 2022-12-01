@@ -64,7 +64,8 @@ Create table Transactions(
 	Description varchar(30),
 	Customer_Id varchar(10),
 	Employee_Id varchar(10),
-	CurrBalance numeric(13,3),
+	CurrBalance_from numeric(13,3),
+	CurrBalance_to numeric(13,3),
 	day date default current_timestamp,
 	--include check for amount and customer,employee
 	check(Type='Deposit' or Type='Withdrawl' or Type='Transfer' or Type='ExtTransfer')

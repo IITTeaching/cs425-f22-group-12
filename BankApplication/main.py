@@ -203,7 +203,7 @@ def cust(c_id):
                     print()
                     amount = input("Please choose withdrawal amount: ")
                     print()
-                    if(check_balance(amount,acc_id)==-1):
+                    if(decimal.Decimal(amount)>=0 and check_balance(amount,acc_id)==-1):
                         print("Amount to be withdrawn greater than account balance")
                         print(("Returning to home screen"))
                         break
@@ -284,10 +284,11 @@ def cust(c_id):
                         print(("Returning to home screen"))
                         break
                     description = input("Please write a short description: ")
-                    ext_transfer(acc_from_id, c_id, bank, account_number, routing_number, amount, description)
+                    ext_transfer(acc_from_id, bank, account_number, routing_number, amount, description,c_id)
                     break
                 else:
-                    print("invalid")
+                    print("Invalid Id's have been entered, returning to main screen")
+                    break
 
             pass
 
@@ -409,7 +410,7 @@ def loc_transfer(acc_from_id, acc_to_id, description,amount,c_id='NULL',e_id='NU
         print("try again")
 
 
-def ext_transfer(acc_from_id, c_id, bank, account_number, routing_number, amount, description):
+def ext_transfer(acc_from_id,bank, account_number, routing_number, amount, description,c_id='NULL',e_id='NULL'):
     try:
         clear()
         logo()
@@ -420,7 +421,7 @@ def ext_transfer(acc_from_id, c_id, bank, account_number, routing_number, amount
         from_acc_new_amount = from_acc_old_amount - Decimal(amount.strip('"'))
 
         cur.execute("UPDATE account SET balance = {} WHERE account_id = '{}'".format(from_acc_new_amount, acc_from_id))
-        new_ext_transfer_transaction(t_type, amount, description, c_id, 'NULL', acc_from_id, bank, account_number, routing_number,from_acc_new_amount)
+        new_ext_transfer_transaction(t_type, amount, description, c_id,e_id, acc_from_id, bank, account_number, routing_number,from_acc_new_amount)
         conn.commit()
         print("Amount Transferred successfully!")
         # Need to have a pause here so the user can see success message before moving to the next screen.
@@ -500,7 +501,7 @@ def emp_signin():
             print()
 
 def choose_any_account():
-    cur.execute("SELECT * FROM account;")
+    cur.execute("SELECT account_id,type,balance,c.name FROM account as a,customer as c where a.account_id=c.customer_id;")
     rec = cur.fetchall()
     l = []
     print()
@@ -508,9 +509,9 @@ def choose_any_account():
     for row in rec:
         l.append(int(row[0]))
         if (row[1] == 'C'):
-            print(" ", row[0], ".  ", "Checking  ", row[2])
+            print(" ", row[0], ".  ", "Checking  ", row[2]," Customer:",row[3])
         elif (row[1] == 'S'):
-            print(" ", row[0], ".  ", "Saving    ", row[2])
+            print(" ", row[0], ".  ", "Saving    ", row[2]," Customer:",row[3])
     l.sort()
     return l;
 
@@ -533,7 +534,8 @@ def emp(e_id):
         print(" 4.Execute external transfer between accounts and external account")
         print(" 5.View statment for an account(MANAGER ONLY)")
         print(" 6.View pending transactions for an account(MANAGER ONLY)")
-        print(" 7.Log out")
+        print(" 7.View account Analytics")
+        print(" 8.Log out")
         print()
         choose=input("Choose an option here: ")
         if(choose.strip()=='1'):
@@ -556,16 +558,75 @@ def emp(e_id):
                     print("Invalid Id's have been entered, returning to main screen")
                     break
         elif(choose.strip()=='2'):
-            pass
+            l=choose_any_account()
+            while True:
+                acc_id = input("\nChoose an account id: ")
+                if (int(acc_id.strip()) in l):
+                    print()
+                    amount = input("Please choose withdrawal amount: ")
+                    print()
+                    if(decimal.Decimal(amount)>=0 and check_balance(amount,acc_id)==-1):
+                        print("Amount to be withdrawn greater than account balance")
+                        print(("Returning to home screen"))
+                        break
+                    description = input("Please write a short description: ")
+                    withdraw(amount, acc_id,description,e_id=e_id)
+                    break
+                else:
+                    print("Invalid Id's have been entered, returning to main screen")
+                    break
         elif (choose.strip() == '3'):
-            pass
+            while True:
+                l = choose_any_account()
+                acc_from_id = input("\nChoose the id of the account you want to transfer the money from: ")
+                l2 = choose_any_account()
+                acc_to_id = input("\nChoose the id of the account you want to transfer the money to: ")
+                if (int(acc_from_id.strip()) in l and int(acc_to_id.strip()) in l2):
+                    print()
+                    amount = input("Please choose transfer amount: ")
+                    print()
+                    if (decimal.Decimal(amount.strip())>=0 and check_balance(amount, acc_from_id)):
+                        print("Amount to be withdrawn greater than account balance")
+                        print(("Returning to home screen"))
+                        break
+                    description = input("Please write a short description: ")
+                    loc_transfer(acc_from_id, acc_to_id, description,amount,e_id=e_id)
+                    break
+                else:
+                    print("Invalid Id's have been entered, returning to main screen")
+                    break
+
         elif (choose.strip() == '4'):
-            pass
+            l=choose_any_account()
+            while True:
+                acc_from_id = input("\nChoose the id of the account you want to transfer the money from: ")
+                if (int(acc_from_id.strip()) in l):
+                    print()
+                    bank = input("Please enter which bank you want to transfer funds to: ")
+                    print()
+                    account_number = input("Please enter the account number (12 Digits): ")
+                    print()
+                    routing_number = input("Please enter the routing number (9 Digits): ")
+                    print()
+                    amount = input("Please choose transfer amount: ")
+                    print()
+                    if (check_balance(amount, acc_from_id)):
+                        print("Transfer amount is greater than account balance")
+                        print(("Returning to home screen"))
+                        break
+                    description = input("Please write a short description: ")
+                    ext_transfer(acc_from_id, bank, account_number, routing_number, amount, description,e_id=e_id)
+                    break
+                else:
+                    print("Invalid Id's have been entered, returning to main screen")
+                    break
         elif (choose.strip() == '5'):
             pass
         elif (choose.strip() == '6'):
             pass
-        elif (choose.strip() == '7'):
+        elif(choose.strip()=='7'):
+            pass
+        elif (choose.strip() == '8'):
             print("LOGGING OUT...")
             break
         else:
