@@ -6,7 +6,7 @@ from decimal import Decimal
 
 conn = psycopg2.connect(
     host="localhost",
-    database="project",
+    database="Bank",
     user="postgres",
     password="")
 cur=conn.cursor()
@@ -75,7 +75,11 @@ def choose_ad():
                 add_id=create_new_id('address')
                 cur.execute("Insert into address values ({},'{}','{}','{}');".format(add_id,city,state,zip))
                 conn.commit()
+                print()
                 print("New Address successfully added!")
+                print()
+                paused_clear()
+                print()
                 return add_id
             except(Exception, psycopg2.DatabaseError) as e:
                 print("eeror:",e)
@@ -107,8 +111,15 @@ def create_new():
         conn.commit()
         clear()
         logo()
+        print()
         print("\nCongratulations! your account has been created successfully.")
-        print("Your c_id is ",c_id)
+        print()
+        print("Your Customer ID is: ",c_id)
+        print()
+        print("Please take note of this ID as you will need it for future logins.")
+        print()
+        paused_clear()
+        print()
         return c_id
         # Need to have a pause here so the user can see their ID before moving to the next screen.
     except(Exception, psycopg2.DatabaseError) as e:
@@ -165,11 +176,14 @@ def cust(c_id):
         print(" 3.Withdraw money from an account")
         print(" 4.Transfer money between accounts")
         print(" 5.Transfer money to an external account")
-        print(" 6.Log out")
+        print(" 6.Show accounts")
+        print(" 7.Log out")
         print()
         choose=input("Choose an option here: ")
         # CREATING A NEW ACCOUNT
         if(choose.strip()=='1'):
+            clear()
+            logo()
             print()
             print("Account Type: ")
             choose_acc_type(c_id)
@@ -217,22 +231,17 @@ def cust(c_id):
 
         # INTERNAL TRANSFER
         elif(choose.strip() == '4'):
+            # TODO: Need to split this into transfers between own accounts and other accounts at the same bank.
+            '''
+            ** For own Account transfers this stays the same
+            ** For transfers to other accounts at the same bank we should prompt the user
+                to enter the ID of the account they want to transfer to instead of showing all the existing accounts.
+            '''
+
             while True:
                 l = show_accounts(c_id)
                 acc_from_id = input("\nChoose the id of the account you want to transfer the money from: ")
-                cur.execute("SELECT * FROM account;")
-                rec2 = cur.fetchall()
-                l2 = []
-                print()
-                print("To accounts: ")
-                print("  ID.   Type")
-                for row in rec2:
-                    l2.append(int(row[0]))
-                    if (row[1] == 'C'):
-                        print(" ", row[0], ".  ", "Checking")
-                    elif (row[1] == 'S'):
-                        print(" ", row[0], ".  ", "Saving")
-                l2.sort()
+                l2 = show_accounts(c_id)
                 acc_to_id = input("\nChoose the id of the account you want to transfer the money to: ")
                 if (int(acc_from_id.strip()) in l and int(acc_to_id.strip()) in l2):
                     print()
@@ -291,12 +300,22 @@ def cust(c_id):
 
             pass
 
-        # LOG OUT
+        # VIEW ACCOUNTS
         elif(choose.strip() == '6'):
+            print()
+            show_accounts(c_id)
+            print()
+            paused_clear()
+            pass
+
+        # LOG OUT
+        elif (choose.strip() == '7'):
             print()
             print("You have been signed out")
             print()
+            paused_clear()
             return
+
         else:
             print("Choose a valid option")
 
@@ -316,7 +335,10 @@ def choose_acc_type(c_id):
             add_id = create_new_id('account')
             cur.execute("Insert into account values ({},'{}',{},{});".format(add_id, acc_type, balance, c_id))
             conn.commit()
-            print("New checking account successfully created!with Id: ",add_id)
+            print()
+            print("New checking account successfully created!with ID: ",add_id)
+            print()
+            paused_clear()
         except(Exception, psycopg2.DatabaseError) as e:
             print("error:", e)
             print("try again")
@@ -330,7 +352,9 @@ def choose_acc_type(c_id):
             add_id = create_new_id('account')
             cur.execute("Insert into account values ({},'{}',{},{});".format(add_id, acc_type, balance, c_id))
             conn.commit()
-            print("New saving account successfully created! with Id: ",add_id)
+            print()
+            print("New saving account successfully created! with ID: ",add_id)
+            paused_clear()
         except(Exception, psycopg2.DatabaseError) as e:
             print("error:", e)
             print("try again")
@@ -356,9 +380,10 @@ def deposit(amount, acc_id,description,c_id='NULL',e_id='NULL'):
         cur.execute("UPDATE account SET balance = {} WHERE account_id = '{}'".format(new_amount, acc_id))
         new_trans(t_type, amount, description,c_id,e_id,acc_id,acc_id,new_amount)
         conn.commit()
+        print()
         print("Amount deposited successfully!")
+        paused_clear()
         pass
-        # Need to have a pause here so the user can see their ID before moving to the next screen.
     except(Exception, psycopg2.DatabaseError) as e:
         print("error:", e)
         print("try again")
@@ -376,7 +401,10 @@ def withdraw(amount, acc_id, description,c_id='NULL',e_id='NULL'):
         cur.execute("UPDATE account SET balance = {} WHERE account_id = '{}'".format(new_amount, acc_id))
         new_trans(t_type, amount, description, c_id,e_id,acc_id,acc_id,new_amount)
         conn.commit()
+        print()
         print("Amount withdrawn successfully!")
+        print()
+        paused_clear()
         pass
         # Need to have a pause here so the user can see their ID before moving to the next screen.
     except(Exception, psycopg2.DatabaseError) as e:
@@ -402,8 +430,10 @@ def loc_transfer(acc_from_id, acc_to_id, description,amount,c_id='NULL',e_id='NU
         cur.execute("UPDATE account SET balance = {} WHERE account_id = '{}'".format(to_acc_new_amount, acc_to_id))
         new_trans(t_type, amount, description, c_id,e_id,acc_from_id,acc_to_id,from_acc_new_amount)
         conn.commit()
+        print()
         print("Amount Transferred successfully!")
-        # Need to have a pause here so the user can see success message before moving to the next screen.
+        print()
+        paused_clear()
     except(Exception, psycopg2.DatabaseError) as e:
         print("error:", e)
         print("try again")
@@ -422,8 +452,10 @@ def ext_transfer(acc_from_id, c_id, bank, account_number, routing_number, amount
         cur.execute("UPDATE account SET balance = {} WHERE account_id = '{}'".format(from_acc_new_amount, acc_from_id))
         new_ext_transfer_transaction(t_type, amount, description, c_id, 'NULL', acc_from_id, bank, account_number, routing_number,from_acc_new_amount)
         conn.commit()
+        print()
         print("Amount Transferred successfully!")
-        # Need to have a pause here so the user can see success message before moving to the next screen.
+        print()
+        paused_clear()
     except(Exception, psycopg2.DatabaseError) as e:
         print("error:", e)
         print("try again")
@@ -460,14 +492,14 @@ def logo():
     # Logo
     print()
     print("__/\\\\\\\\\\\\\\\\\\\\\\\\\____/\\\\\________/\\\\\_____/\\\\\\\\\\\\\\\\\\\\\___        ")
-    print(" _\/\\\\\/////////\\\\\_\/\\\\\_____/\\\\\//____/\\\\\/////////\\\\\_       ")
-    print("  _\/\\\\\_______\/\\\\\_\/\\\\\__/\\\\\//______\//\\\\\______\///__      ")
-    print("   _\/\\\\\\\\\\\\\\\\\\\\\\\\\\\\__\/\\\\\\\\\\\\//\\\\\_______\////\\\\\_________     ")
-    print("    _\/\\\\\/////////\\\\\_\/\\\\\//_\//\\\\\_________\////\\\\\______    ")
-    print("     _\/\\\\\_______\/\\\\\_\/\\\\\____\//\\\\\___________\////\\\\\___   ")
-    print("      _\/\\\\\_______\/\\\\\_\/\\\\\_____\//\\\\\___/\\\\\______\//\\\\\__  ")
-    print("       _\/\\\\\\\\\\\\\\\\\\\\\\\\\/__\/\\\\\______\//\\\\\_\///\\\\\\\\\\\\\\\\\\\\\/___ ")
-    print("        _\/////////////____\///________\///____\///////////_____")
+    print("__\/\\\\\/////////\\\\\_\/\\\\\_____/\\\\\//____/\\\\\/////////\\\\\_       ")
+    print("___\/\\\\\_______\/\\\\\_\/\\\\\__/\\\\\//______\//\\\\\______\///__      ")
+    print("____\/\\\\\\\\\\\\\\\\\\\\\\\\\\\\__\/\\\\\\\\\\\\//\\\\\_______\////\\\\\_________     ")
+    print("_____\/\\\\\/////////\\\\\_\/\\\\\//_\//\\\\\_________\////\\\\\______    ")
+    print("______\/\\\\\_______\/\\\\\_\/\\\\\____\//\\\\\___________\////\\\\\___   ")
+    print("_______\/\\\\\_______\/\\\\\_\/\\\\\_____\//\\\\\___/\\\\\______\//\\\\\__  ")
+    print("________\/\\\\\\\\\\\\\\\\\\\\\\\\\/__\/\\\\\______\//\\\\\_\///\\\\\\\\\\\\\\\\\\\\\/___ ")
+    print("_________\/////////////____\///________\///____\///////////_____")
 
 
 def clear():
@@ -479,6 +511,21 @@ def clear():
     else:
         _ = 1
         system('clear')
+
+
+def paused_clear():
+    trigger = input("Please press Enter to continue...")
+    if (trigger.strip() == "y"):
+        # for windows
+        if name == 'nt':
+            _ = system('cls')
+
+        # for mac and linux(here, os.name is 'posix')
+        else:
+            _ = 1
+            system('clear')
+    else:
+        print("Invalid option")
 
 def emp_signin():
     clear()
@@ -605,5 +652,3 @@ while True:
 conn.close()
 print("Connection closed")
 
-# add curr balance
-# add intrest function
