@@ -37,10 +37,12 @@ Create table Account(
 	Account_Id varchar(10) primary key,
 	Type varchar(2),
 	Balance numeric(13,3),
-	Customer_Id varchar(10) references Customer
+	Customer_Id varchar(10) references Customer,
+	Status varchar(10),
 	--include check statement for Type and balance
 	check(balance>=0),
-	check(type='C' or type='S')
+	check(type='C' or type='S'),
+	check(Status='Active' or Status='Closed')
 	);
 
 Create table Employee(
