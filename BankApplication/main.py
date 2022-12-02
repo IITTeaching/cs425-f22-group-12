@@ -201,7 +201,7 @@ def cust(c_id):
                     print()
                     if (decimal.Decimal(amount.strip()) <= 0):
                         print("Amount to be deposited is less than or equals to $0")
-                        print(("Returning to home screen"))
+                        paused_clear()
                         break
                     description = input("Please write a short description: ")
                     deposit(amount, acc_id,description,c_id)
@@ -219,13 +219,18 @@ def cust(c_id):
                     print()
                     amount = input("Please choose withdrawal amount: ")
                     print()
-                    if(decimal.Decimal(amount)>=0 and check_balance(amount,acc_id)==-1):
+                    if(check_balance(amount,acc_id)==-1):
                         print("Amount to be withdrawn greater than account balance")
-                        print(("Returning to home screen"))
+                        paused_clear()
                         break
-                    description = input("Please write a short description: ")
-                    withdraw(amount, acc_id,description,c_id)
-                    break
+                    elif (decimal.Decimal(amount) > 0):
+                        print("Amount to be withdrawn cannot be $0")
+                        paused_clear()
+                        break
+                    else:
+                        description = input("Please write a short description: ")
+                        withdraw(amount, acc_id,description,c_id)
+                        break
                 else:
                     print("Invalid Id's have been entered, returning to main screen")
                     break
@@ -254,7 +259,7 @@ def cust(c_id):
                         print()
                         if (check_balance(amount, acc_from_id)):
                             print("Amount to be withdrawn greater than account balance")
-                            print(("Returning to home screen"))
+                            paused_clear()
                             break
                         description = input("Please write a short description: ")
                         loc_transfer(acc_from_id, acc_to_id, description,amount,c_id)
@@ -281,7 +286,7 @@ def cust(c_id):
                         print()
                         if (check_balance(amount, acc_from_id)):
                             print("Amount to be withdrawn greater than account balance")
-                            print(("Returning to home screen"))
+                            paused_clear()
                             break
                         description = input("Please write a short description: ")
                         loc_transfer(acc_from_id, acc_to_id, description, amount, c_id)
@@ -322,7 +327,7 @@ def cust(c_id):
                     print()
                     if (check_balance(amount, acc_from_id)):
                         print("Transfer amount is greater than account balance")
-                        print(("Returning to home screen"))
+                        paused_clear()
                         break
                     description = input("Please write a short description: ")
                     ext_transfer(acc_from_id, bank, account_number, routing_number, amount, description,c_id)
@@ -340,10 +345,6 @@ def cust(c_id):
             print()
             paused_clear()
             pass
-
-        # TODO: add a function to show transactions for:
-        # ** A single account (prompt user for which account).
-        # ** For all accounts held by the user.
 
         # SHOW TRANSACTIONS
         elif (choose.strip() == '7'):
@@ -372,14 +373,14 @@ def cust(c_id):
                 print()
                 print("Account has been deleted successfully!")
                 paused_clear()
-                break
+                pass
             else:
                 clear()
                 logo()
                 print()
                 print("Cannot delete account with non zero balance!")
                 paused_clear()
-                break
+                pass
 
         # LOG OUT
         elif (choose.strip() == '9'):
@@ -391,6 +392,7 @@ def cust(c_id):
 
         else:
             print("Choose a valid option")
+            break
 
 def choose_acc_type(c_id):
     print()
@@ -602,6 +604,8 @@ def paused_clear():
                 break
         else:
             print("Invalid option")
+            print()
+            paused_clear()
             pass
 
 
@@ -673,7 +677,7 @@ def emp(e_id):
                     print()
                     if (decimal.Decimal(amount.strip()) <= 0):
                         print("Amount to be deposited is less than or equals to $0")
-                        print(("Returning to home screen"))
+                        paused_clear()
                         break
                     description = input("Please write a short description: ")
                     deposit(amount, acc_id,description,e_id=e_id)
@@ -693,7 +697,7 @@ def emp(e_id):
                     print()
                     if(decimal.Decimal(amount)>=0 and check_balance(amount,acc_id)==-1):
                         print("Amount to be withdrawn greater than account balance")
-                        print(("Returning to home screen"))
+                        paused_clear()
                         break
                     description = input("Please write a short description: ")
                     withdraw(amount, acc_id,description,e_id=e_id)
@@ -713,7 +717,7 @@ def emp(e_id):
                     print()
                     if (decimal.Decimal(amount.strip())>=0 and check_balance(amount, acc_from_id)):
                         print("Amount to be withdrawn greater than account balance")
-                        print(("Returning to home screen"))
+                        paused_clear()
                         break
                     description = input("Please write a short description: ")
                     loc_transfer(acc_from_id, acc_to_id, description,amount,e_id=e_id)
@@ -738,7 +742,7 @@ def emp(e_id):
                     print()
                     if (check_balance(amount, acc_from_id)):
                         print("Transfer amount is greater than account balance")
-                        print(("Returning to home screen"))
+                        paused_clear()
                         break
                     description = input("Please write a short description: ")
                     ext_transfer(acc_from_id, bank, account_number, routing_number, amount, description,e_id=e_id)
@@ -756,7 +760,9 @@ def emp(e_id):
             print("LOGGING OUT...")
             break
         else:
-            print("INVALID OPTION")
+            print("Invalid option")
+            print()
+            paused_clear()
 
 while True:
 
@@ -788,6 +794,8 @@ while True:
         exit()
     else:
         print("Invalid option")
+        print()
+        paused_clear()
 
 conn.close()
 print("Connection closed")
