@@ -6,7 +6,7 @@ from decimal import Decimal
 
 conn = psycopg2.connect(
     host="localhost",
-    database="Bank",
+    database="project",
     user="postgres",
     password="030971")
 cur=conn.cursor()
@@ -149,6 +149,9 @@ def signin():
 def show_accounts(c_id):
     cur.execute("SELECT * FROM account WHERE customer_id = '{}' AND status = 'Active';".format(c_id))
     rec = cur.fetchall()
+    if(len(rec)==0):
+        print("You do not have any accounts, Create one")
+        return []
     l = []
     print()
     print("  ID.   Type       Balance")
@@ -193,6 +196,8 @@ def cust(c_id):
         # DEPOSIT
         elif(choose.strip()=='2'):
             l=show_accounts(c_id)
+            if(len(l)==0):
+                continue
             while True:
                 acc_id = input("\nChoose an account id: ")
                 if (int(acc_id.strip()) in l):
@@ -213,6 +218,8 @@ def cust(c_id):
         # WITHDRAW
         elif(choose.strip()=='3'):
             l=show_accounts(c_id)
+            if (len(l) == 0):
+                continue
             while True:
                 acc_id = input("\nChoose an account id: ")
                 if (int(acc_id.strip()) in l):
@@ -238,6 +245,7 @@ def cust(c_id):
 
         # INTERNAL TRANSFER
         elif(choose.strip() == '4'):
+
             clear()
             logo()
             print()
@@ -312,7 +320,8 @@ def cust(c_id):
                 elif (row[1] == 'S'):
                     print(" ", row[0], ".  ", "Saving    ", row[2])
             l.sort()
-
+            if (len(l) == 0):
+                continue
             while True:
                 acc_from_id = input("\nChoose the id of the account you want to transfer the money from: ")
                 if (int(acc_from_id.strip()) in l):
@@ -503,7 +512,7 @@ def loc_transfer(acc_from_id, acc_to_id, description,amount,c_id='NULL',e_id='NU
         to_acc_old_amount = rec2[2]
         to_acc_new_amount = to_acc_old_amount + Decimal(amount.strip('"'))
         cur.execute("UPDATE account SET balance = {} WHERE account_id = '{}'".format(to_acc_new_amount, acc_to_id))
-        new_trans(t_type, amount, description, c_id,e_id,acc_from_id,acc_to_id,from_acc_new_amount)
+        new_trans(t_type, amount, description, c_id,e_id,acc_from_id,acc_to_id,from_acc_new_amount,to_acc_new_amount)
         conn.commit()
         print()
         print("Amount Transferred successfully!")
@@ -536,9 +545,9 @@ def ext_transfer(acc_from_id,bank, account_number, routing_number, amount, descr
         print("try again")
 
 
-def new_trans(t_type, amount, description, c_id, e_id,account_from_id,account_to_id,currbalance,flag='T'):
+def new_trans(t_type, amount, description, c_id, e_id,account_from_id,account_to_id,currbalance,currbalance_to='NULL',flag='T'):
     t_id = create_new_id("transactions")
-    cur.execute("Insert into transactions values ('{}','{}',{},'{}','{}','{}','{}');".format(t_id, t_type, amount, description, c_id, e_id,currbalance))
+    cur.execute("Insert into transactions values ('{}','{}',{},'{}','{}','{}',{},{});".format(t_id, t_type, amount, description, c_id, e_id,currbalance,currbalance_to))
     if(flag=='T'):
         cur.execute("Insert into to_from values('{}','{}','{}');".format(t_id,account_from_id,account_to_id))
     else:
@@ -629,7 +638,7 @@ def emp_signin():
             print()
 
 def choose_any_account():
-    cur.execute("SELECT account_id,type,balance,c.name FROM account as a,customer as c where a.account_id=c.customer_id;")
+    cur.execute("SELECT account_id,type,balance,name FROM account natural join customer;")
     rec = cur.fetchall()
     l = []
     print()
@@ -643,6 +652,33 @@ def choose_any_account():
     l.sort()
     return l;
 
+def show_statment(a_id):
+    pass
+
+def show_pending(a_id):
+    print("Pending Transactions")
+    print()
+    print("Internal transaction Timeline")
+    print()
+    cur.execute("select transaction_id,type,amount,currbalance_from,currbalance_to,day,from_account,to_account from ((select * from transactions natural join to_from where from_account='{}') union (select * from transactions natural join to_from where to_account='{}')) as f where extract(month from day)=extract(month from current_timestamp) order by day;".format(a_id,a_id))
+    rec=cur.fetchall()
+    if(len(rec)==0):
+        print("No transactions have been made this month")
+    for row in rec:
+        if(row[1]=='Deposit'):
+            print("Date:",row[5],"    Type:Deposit","    Balance before:",(decimal.Decimal(row[3])-decimal.Decimal(row[2])),"   Amount added:+",row[2],"    Final Balance:",row[3])
+            print()
+        elif (row[1] == 'Withdrawl'):
+            print("Date:", row[5], "    Type:Withdrawal", "    Balance before:",(decimal.Decimal(row[3]) + decimal.Decimal(row[2])),"   Amount removed:-",row[2],"    Final Balance:",row[3])
+            print()
+        elif(row[1]=='Transfer'):
+            if(row[6]==a_id):
+                print("Date:", row[5], "    Type:Transfer", "    Balance before:",(decimal.Decimal(row[3]) + decimal.Decimal(row[2])), "   Amount removed:-", row[2],"    Final Balance:", row[3])
+                print()
+            else:
+                print("Date:", row[5], "    Type:Transfer", "    Balance before:",(decimal.Decimal(row[4]) - decimal.Decimal(row[2])), "   Amount added:+", row[2],"    Final Balance:", row[4])
+                print()
+
 def emp(e_id):
     cur.execute("Select name,position from employee where employee_id='{}'".format(e_id))
     rec = cur.fetchone()
@@ -653,7 +689,7 @@ def emp(e_id):
         clear()
         logo()
         print()
-        print(" Welcome Back",rec[0],"   Position:",rec[1])
+        print(" Welcome Back",rec[0],"   Position:",rec[1], "    manager:",manager)
         print()
         print("Choose from the options below to manage or create accounts")
         print(" 1.Execute deposit from any account")
@@ -662,7 +698,7 @@ def emp(e_id):
         print(" 4.Execute external transfer between accounts and external account")
         print(" 5.View statement for an account(MANAGER ONLY)")
         print(" 6.View pending transactions for an account(MANAGER ONLY)")
-        print(" 7.View account Analytics")
+        print(" 7.View account Analytics(MANAGER ONLY)")
         print(" 8.Log out")
         print()
         choose=input("Choose an option here: ")
@@ -751,11 +787,36 @@ def emp(e_id):
                     print("Invalid Id's have been entered, returning to main screen")
                     break
         elif (choose.strip() == '5'):
-            pass
+            if(manager==False):
+                print()
+                print("Unauthorized access")
+                print()
+                paused_clear()
+            else:
+                pass
         elif (choose.strip() == '6'):
-            pass
+            if (manager == False):
+                print()
+                print("Unauthorized access")
+                print()
+                paused_clear()
+            else:
+                l=choose_any_account()
+                id=input("Choose an account to view the pending transactions for:")
+                if(int(id.strip()) in l):
+                    show_pending(id)
+                    paused_clear()
+                else:
+                    print("Invalid input , returning to main screen")
+                    paused_clear()
         elif(choose.strip()=='7'):
-            pass
+            if (manager == False):
+                print()
+                print("Unauthorized access")
+                print()
+                paused_clear()
+            else:
+                pass
         elif (choose.strip() == '8'):
             print("LOGGING OUT...")
             break
