@@ -342,21 +342,6 @@ def cust(c_id):
             print()
             month = input("Please enter a month (MM): ")
             start_date = "{}-{}-01".format(year, month)
-
-            '''
-            cur.execute("SELECT * FROM account WHERE customer_id = '{}' AND status = 'Active';".format(c_id))
-            rec = cur.fetchall()
-            l = []
-            print()
-            print("  ID.   Type       Balance")
-            for row in rec:
-                l.append(int(row[0]))
-                if (row[1] == 'C'):
-                    print(" ", row[0], ".  ", "Checking  ", row[2])
-                elif (row[1] == 'S'):
-                    print(" ", row[0], ".  ", "Saving    ", row[2])
-            l.sort()
-            '''
             cur.execute("SELECT transaction_id, type, amount, description FROM transactions WHERE day BETWEEN '{}' AND date '{}' + interval '1 month'".format(start_date.strip(), start_date.strip()))
             rec = cur.fetchall()
             print("ID    Type          Amount      Description ")
@@ -365,8 +350,6 @@ def cust(c_id):
             print()
             paused_clear()
             pass
-
-
 
         # CLOSE ACCOUNT
         elif (choose.strip() == '8'):
@@ -578,7 +561,6 @@ def new_ext_transfer_transaction(t_type, amount, description, c_id, e_id, acc_fr
                                                                            e_id,currbalance))
     cur.execute("INSERT INTO to_from_ext VALUES('{}','{}','{}','{}','{}')".format(t_id, acc_from_id, bank, account_number, routing_number))
     conn.commit()
-
 
 
 def logo():
@@ -870,5 +852,3 @@ while True:
 conn.close()
 print("Connection closed")
 
-## delete account option
-## check if account balance is 0 before deleting the account## check if account balance is 0 before deleting the account
