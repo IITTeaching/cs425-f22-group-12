@@ -219,18 +219,13 @@ def cust(c_id):
                     print()
                     amount = input("Please choose withdrawal amount: ")
                     print()
-                    if(check_balance(amount,acc_id)==-1):
+                    if(decimal.Decimal(amount) >= 0 and check_balance(amount,acc_id)==-1):
                         print("Amount to be withdrawn greater than account balance")
                         paused_clear()
                         break
-                    elif (decimal.Decimal(amount) > 0):
-                        print("Amount to be withdrawn cannot be $0")
-                        paused_clear()
-                        break
-                    else:
-                        description = input("Please write a short description: ")
-                        withdraw(amount, acc_id,description,c_id)
-                        break
+                    description = input("Please write a short description: ")
+                    withdraw(amount, acc_id, description, c_id)
+                    break
                 else:
                     print("Invalid Id's have been entered, returning to main screen")
                     break
@@ -800,5 +795,4 @@ while True:
 conn.close()
 print("Connection closed")
 
-## delete account option
 ## check if account balance is 0 before deleting the account
