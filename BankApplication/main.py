@@ -441,6 +441,7 @@ def check_balance(amount,ac_id):
 
 def deposit(amount, acc_id,description,c_id='NULL',e_id='NULL'):
     try:
+        print("Reaches here 1")
         clear()
         logo()
         cur.execute("SELECT * FROM account WHERE account_id = '{}';".format(acc_id))
@@ -449,6 +450,7 @@ def deposit(amount, acc_id,description,c_id='NULL',e_id='NULL'):
         old_amount = rec[2]
         new_amount = old_amount + Decimal(amount.strip('"'))
         cur.execute("UPDATE account SET balance = {} WHERE account_id = '{}'".format(new_amount, acc_id))
+        print("Reaches here 2")
         new_trans(t_type, amount, description,c_id,e_id,acc_id,acc_id,new_amount)
         conn.commit()
         print()
@@ -531,10 +533,12 @@ def ext_transfer(acc_from_id,bank, account_number, routing_number, amount, descr
         print("try again")
 
 
-def new_trans(t_type, amount, description, c_id, e_id,account_from_id,account_to_id,currbalance_from,curebalance_to='NULL',flag='T'):
+def new_trans(t_type, amount, description, c_id, e_id,account_from_id,account_to_id,currbalance_from,currbalance_to='NULL',flag='T'):
+    print("Reaches 3")
     t_id = create_new_id("transactions")
-    cur.execute("Insert into transactions values ('{}','{}',{},'{}','{}','{}','{}','{}');".format(t_id, t_type, amount, description, c_id, e_id,currbalance_from,curebalance_to))
+    cur.execute("Insert into transactions values ('{}','{}',{},'{}','{}','{}',{},{});".format(t_id, t_type, amount, description, c_id, e_id,currbalance_from,currbalance_to))
     if(flag=='T'):
+        print("Reaches 4")
         cur.execute("Insert into to_from values('{}','{}','{}');".format(t_id,account_from_id,account_to_id))
     else:
         pass
