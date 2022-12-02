@@ -258,6 +258,7 @@ def cust(c_id):
                     if (check_balance(amount, acc_from_id)):
                         print("Amount to be withdrawn greater than account balance")
                         print(("Returning to home screen"))
+
                         break
                     description = input("Please write a short description: ")
                     loc_transfer(acc_from_id, acc_to_id, description,amount,c_id)
