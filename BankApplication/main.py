@@ -8,7 +8,7 @@ conn = psycopg2.connect(
     host="localhost",
     database="Bank",
     user="postgres",
-    password="")
+    password="030971")
 cur=conn.cursor()
 def create_new_id(table_name):
     l=[]
@@ -338,16 +338,17 @@ def cust(c_id):
             print()
             print("Transactions: ")
             print()
+            print("     Accounts: ")
+            show_accounts(c_id)
+            print()
+            account = input("please enter the ID of the account you want to view transactions for: ")
+            print()
             year = input("Please enter a year (YYYY): ")
             print()
             month = input("Please enter a month (MM): ")
             start_date = "{}-{}-01".format(year, month)
-            cur.execute("SELECT transaction_id, type, amount, description FROM transactions WHERE day BETWEEN '{}' AND date '{}' + interval '1 month'".format(start_date.strip(), start_date.strip()))
-            rec = cur.fetchall()
-            print("ID    Type          Amount      Description ")
-            for item in rec:
-                print("{0: <6}{1: <14}{2: <12}{3: <20}".format(item[0], item[1], item[2], item[3]))
-            print()
+
+            show_statment(account, start_date)
             paused_clear()
             pass
 
@@ -643,8 +644,41 @@ def choose_any_account():
     l.sort()
     return l;
 
-def show_statment(a_id):
-    pass
+def show_statment(a_id, date):
+    print()
+    cur.execute(
+        "select transaction_id,type,amount,currbalance_from,currbalance_to,day,from_account,to_account from ((select * from transactions natural join to_from where from_account='{}') union (select * from transactions natural join to_from where to_account='{}')) as f WHERE f.day BETWEEN date '{}' - interval '1 month' AND '{}' ORDER BY day;".format(
+            a_id, a_id, date.strip(), date.strip()))
+    rec = cur.fetchall()
+    if (len(rec) == 0):
+        print("No transactions have been made this month")
+        print()
+        return
+    print()
+    print("Date          Type          Balance before  Amount    Balance after")
+    print()
+    for row in rec:
+        if (row[1] == 'Deposit'):
+            print("{0}{1: <18}{2: <16}{3: <10}{4: <10}".format(row[5], "    Deposit",
+                                                                    (decimal.Decimal(row[3]) - decimal.Decimal(row[2])),
+                                                                    row[2], row[3]))
+            print()
+        elif (row[1] == 'Withdrawl'):
+            print("{0}{1: <18}{2: <16}{3: <10}{4: <10}".format(row[5], "    Withdrawal",
+                                                                    (decimal.Decimal(row[3]) + decimal.Decimal(row[2])),
+                                                                    row[2], row[3]))
+            print()
+        elif (row[1] == 'Transfer'):
+            if (row[6] == a_id):
+                print("{0}{1: <18}{2: <16}{3: <10}{4: <10}".format(row[5], "    Transfer Out",
+                                                                        (decimal.Decimal(row[3]) + decimal.Decimal(row[2])),
+                                                                        row[2], row[3]))
+                print()
+            else:
+                print("{0}{1: <18}{2: <16}{3: <10}{4: <10}".format(row[5], "    Transfer In",
+                                                                        (decimal.Decimal(row[3]) - decimal.Decimal(row[2])),
+                                                                        row[2], row[3]))
+                print()
 
 def show_pending(a_id):
     print("Pending Transactions")
@@ -810,6 +844,7 @@ def emp(e_id):
                 pass
         elif (choose.strip() == '8'):
             print("LOGGING OUT...")
+            paused_clear()
             break
         else:
             print("INVALID OPTION")
