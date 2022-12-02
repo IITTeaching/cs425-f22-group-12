@@ -38,11 +38,11 @@ Create table Account(
 	Type varchar(2),
 	Balance numeric(13,3),
 	Customer_Id varchar(10) references Customer,
-	Status varchar(10),
+	status varchar(10),
+	check(status='Active' or Status='Closed'),
 	--include check statement for Type and balance
 	check(balance>=0),
-	check(type='C' or type='S'),
-	check(Status='Active' or Status='Closed')
+	check(type='C' or type='S')
 	);
 
 Create table Employee(
@@ -67,7 +67,7 @@ Create table Transactions(
 	Customer_Id varchar(10),
 	Employee_Id varchar(10),
 	CurrBalance_from numeric(13,3),
-	CurrBalance_to numeric(13,3),
+	CurrBalance_to numeric(13,3) default NULL,
 	day date default current_timestamp,
 	--include check for amount and customer,employee
 	check(Type='Deposit' or Type='Withdrawl' or Type='Transfer' or Type='ExtTransfer')
