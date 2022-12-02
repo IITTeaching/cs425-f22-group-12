@@ -6,7 +6,7 @@ from decimal import Decimal
 
 conn = psycopg2.connect(
     host="localhost",
-    database="project",
+    database="Bank",
     user="postgres",
     password="")
 cur=conn.cursor()
@@ -147,11 +147,8 @@ def signin():
 # this is the function for the customer interface
 
 def show_accounts(c_id):
-    cur.execute("SELECT * FROM account WHERE customer_id = '{}';".format(c_id))
+    cur.execute("SELECT * FROM account WHERE customer_id = '{}' AND status = 'Active';".format(c_id))
     rec = cur.fetchall()
-    if(len(rec)==0):
-        print("You do not have any accounts, Create one")
-        return []
     l = []
     print()
     print("  ID.   Type       Balance")
@@ -180,7 +177,9 @@ def cust(c_id):
         print(" 4.Transfer money between accounts")
         print(" 5.Transfer money to an external account")
         print(" 6.Show accounts")
-        print(" 7.Log out")
+        print(" 7.Show transactions")
+        print(" 8.Delete account")
+        print(" 9.Log out")
         print()
         choose=input("Choose an option here: ")
         # CREATING A NEW ACCOUNT
@@ -194,8 +193,6 @@ def cust(c_id):
         # DEPOSIT
         elif(choose.strip()=='2'):
             l=show_accounts(c_id)
-            if(len(l)==0):
-                continue
             while True:
                 acc_id = input("\nChoose an account id: ")
                 if (int(acc_id.strip()) in l):
@@ -204,7 +201,7 @@ def cust(c_id):
                     print()
                     if (decimal.Decimal(amount.strip()) <= 0):
                         print("Amount to be deposited is less than or equals to $0")
-                        print(("Returning to home screen"))
+                        paused_clear()
                         break
                     description = input("Please write a short description: ")
                     deposit(amount, acc_id,description,c_id)
@@ -216,21 +213,24 @@ def cust(c_id):
         # WITHDRAW
         elif(choose.strip()=='3'):
             l=show_accounts(c_id)
-            if (len(l) == 0):
-                continue
             while True:
                 acc_id = input("\nChoose an account id: ")
                 if (int(acc_id.strip()) in l):
                     print()
                     amount = input("Please choose withdrawal amount: ")
                     print()
-                    if(decimal.Decimal(amount)>=0 and check_balance(amount,acc_id)==-1):
+                    if(check_balance(amount,acc_id)==-1):
                         print("Amount to be withdrawn greater than account balance")
-                        print(("Returning to home screen"))
+                        paused_clear()
                         break
-                    description = input("Please write a short description: ")
-                    withdraw(amount, acc_id,description,c_id)
-                    break
+                    elif (decimal.Decimal(amount) > 0):
+                        print("Amount to be withdrawn cannot be $0")
+                        paused_clear()
+                        break
+                    else:
+                        description = input("Please write a short description: ")
+                        withdraw(amount, acc_id,description,c_id)
+                        break
                 else:
                     print("Invalid Id's have been entered, returning to main screen")
                     break
@@ -238,36 +238,64 @@ def cust(c_id):
 
         # INTERNAL TRANSFER
         elif(choose.strip() == '4'):
-            # TODO: Need to split this into transfers between own accounts and other accounts at the same bank.
-            '''
-            ** For own Account transfers this stays the same
-            ** For transfers to other accounts at the same bank we should prompt the user
-                to enter the ID of the account they want to transfer to instead of showing all the existing accounts.
-            '''
-            l = show_accounts(c_id)
-            if (len(l) == 0):
-                continue
-            while True:
-                acc_from_id = input("\nChoose the id of the account you want to transfer the money from: ")
-                l2 = show_accounts(c_id)
-                acc_to_id = input("\nChoose the id of the account you want to transfer the money to: ")
-                if (int(acc_from_id.strip()) in l and int(acc_to_id.strip()) in l2):
-                    print()
-                    amount = input("Please choose transfer amount: ")
-                    print()
-                    if (check_balance(amount, acc_from_id)):
-                        print("Amount to be withdrawn greater than account balance")
-                        print(("Returning to home screen"))
-
+            clear()
+            logo()
+            print()
+            print("Same bank transfer: ")
+            print()
+            print(" 1.Transfer funds between own accounts at the same bank")
+            print(" 2.Transfer funds between different accounts at the same bank")
+            print()
+            transfer_type = input("Please choose an option: ")
+            if (transfer_type.strip() == "1"):
+                while True:
+                    l = show_accounts(c_id)
+                    acc_from_id = input("\nChoose the id of the account you want to transfer the money from: ")
+                    l2 = show_accounts(c_id)
+                    acc_to_id = input("\nChoose the id of the account you want to transfer the money to: ")
+                    if (int(acc_from_id.strip()) in l and int(acc_to_id.strip()) in l2):
+                        print()
+                        amount = input("Please choose transfer amount: ")
+                        print()
+                        if (check_balance(amount, acc_from_id)):
+                            print("Amount to be withdrawn greater than account balance")
+                            paused_clear()
+                            break
+                        description = input("Please write a short description: ")
+                        loc_transfer(acc_from_id, acc_to_id, description,amount,c_id)
                         break
-                    description = input("Please write a short description: ")
-                    loc_transfer(acc_from_id, acc_to_id, description,amount,c_id)
-                    break
-                else:
-                    print("Invalid Id's have been entered, returning to main screen")
-                    break
+                    else:
+                        print("Invalid Id's have been entered, returning to main screen")
+                        break
 
-            pass
+                pass
+            elif (transfer_type.strip() == "2"):
+                while True:
+                    l = show_accounts(c_id)
+                    acc_from_id = input("\nChoose the ID of the account you want to transfer the money from: ")
+                    cur.execute("SELECT * FROM account;")
+                    rec = cur.fetchall()
+                    l2 = []
+                    for row in rec:
+                        l2.append(int(row[0]))
+                    l2.sort()
+                    acc_to_id = input("\nEnter the ID of the account you want to transfer the money to: ")
+                    if (int(acc_from_id.strip()) in l and int(acc_to_id.strip()) in l2):
+                        print()
+                        amount = input("Please choose transfer amount: ")
+                        print()
+                        if (check_balance(amount, acc_from_id)):
+                            print("Amount to be withdrawn greater than account balance")
+                            paused_clear()
+                            break
+                        description = input("Please write a short description: ")
+                        loc_transfer(acc_from_id, acc_to_id, description, amount, c_id)
+                        break
+                    else:
+                        print("Invalid Id's have been entered, returning to main screen")
+                        break
+
+                pass
 
         # EXTERNAL TRANSFER
         elif (choose.strip() == '5'):
@@ -284,8 +312,7 @@ def cust(c_id):
                 elif (row[1] == 'S'):
                     print(" ", row[0], ".  ", "Saving    ", row[2])
             l.sort()
-            if (len(l) == 0):
-                continue
+
             while True:
                 acc_from_id = input("\nChoose the id of the account you want to transfer the money from: ")
                 if (int(acc_from_id.strip()) in l):
@@ -300,7 +327,7 @@ def cust(c_id):
                     print()
                     if (check_balance(amount, acc_from_id)):
                         print("Transfer amount is greater than account balance")
-                        print(("Returning to home screen"))
+                        paused_clear()
                         break
                     description = input("Please write a short description: ")
                     ext_transfer(acc_from_id, bank, account_number, routing_number, amount, description,c_id)
@@ -319,8 +346,44 @@ def cust(c_id):
             paused_clear()
             pass
 
-        # LOG OUT
+        # SHOW TRANSACTIONS
         elif (choose.strip() == '7'):
+            pass
+
+        # CLOSE ACCOUNT
+        elif (choose.strip() == '8'):
+            clear()
+            logo()
+            print()
+            print("Delete Account:")
+            print()
+            print("Please make sure you transfer the remaining funds out of the account before closing it.")
+            print()
+            l = show_accounts(c_id)
+            print()
+            account_to_delete = input("Please choose the ID of the account you want to close: ")
+            cur.execute("Select Balance from account where account_id='{}'".format(account_to_delete))
+            rec = cur.fetchone()
+            balance = rec[0]
+            if (int(account_to_delete.strip()) in l and decimal.Decimal(balance) == 0):
+                cur.execute("UPDATE account SET Status='{}' WHERE account_id='{}'".format('Closed', account_to_delete))
+                conn.commit()
+                clear()
+                logo()
+                print()
+                print("Account has been deleted successfully!")
+                paused_clear()
+                pass
+            else:
+                clear()
+                logo()
+                print()
+                print("Cannot delete account with non zero balance!")
+                paused_clear()
+                pass
+
+        # LOG OUT
+        elif (choose.strip() == '9'):
             print()
             print("You have been signed out")
             print()
@@ -329,6 +392,7 @@ def cust(c_id):
 
         else:
             print("Choose a valid option")
+            break
 
 def choose_acc_type(c_id):
     print()
@@ -344,10 +408,10 @@ def choose_acc_type(c_id):
             acc_type = "C"
             balance = 0
             add_id = create_new_id('account')
-            cur.execute("Insert into account values ({},'{}',{},{});".format(add_id, acc_type, balance, c_id))
+            cur.execute("Insert into account values ({},'{}',{},{},'Active');".format(add_id, acc_type, balance, c_id))
             conn.commit()
             print()
-            print("New checking account successfully created!with ID: ",add_id)
+            print("New checking account successfully created with ID: ",add_id)
             print()
             paused_clear()
         except(Exception, psycopg2.DatabaseError) as e:
@@ -361,10 +425,11 @@ def choose_acc_type(c_id):
             acc_type = "S"
             balance = 0
             add_id = create_new_id('account')
-            cur.execute("Insert into account values ({},'{}',{},{});".format(add_id, acc_type, balance, c_id))
+            cur.execute("Insert into account values ({},'{}',{},{}, 'Active');".format(add_id, acc_type, balance, c_id))
             conn.commit()
             print()
-            print("New saving account successfully created! with ID: ",add_id)
+            print("New saving account successfully created with ID: ",add_id)
+            print()
             paused_clear()
         except(Exception, psycopg2.DatabaseError) as e:
             print("error:", e)
@@ -417,7 +482,6 @@ def withdraw(amount, acc_id, description,c_id='NULL',e_id='NULL'):
         print()
         paused_clear()
         pass
-        # Need to have a pause here so the user can see their ID before moving to the next screen.
     except(Exception, psycopg2.DatabaseError) as e:
         print("error:", e)
         print("try again")
@@ -439,7 +503,7 @@ def loc_transfer(acc_from_id, acc_to_id, description,amount,c_id='NULL',e_id='NU
         to_acc_old_amount = rec2[2]
         to_acc_new_amount = to_acc_old_amount + Decimal(amount.strip('"'))
         cur.execute("UPDATE account SET balance = {} WHERE account_id = '{}'".format(to_acc_new_amount, acc_to_id))
-        new_trans(t_type, amount, description, c_id,e_id,acc_from_id,acc_to_id,from_acc_new_amount,to_acc_new_amount)
+        new_trans(t_type, amount, description, c_id,e_id,acc_from_id,acc_to_id,from_acc_new_amount)
         conn.commit()
         print()
         print("Amount Transferred successfully!")
@@ -472,9 +536,9 @@ def ext_transfer(acc_from_id,bank, account_number, routing_number, amount, descr
         print("try again")
 
 
-def new_trans(t_type, amount, description, c_id, e_id,account_from_id,account_to_id,currbalance,currbalance_to='NULL',flag='T'):
+def new_trans(t_type, amount, description, c_id, e_id,account_from_id,account_to_id,currbalance,flag='T'):
     t_id = create_new_id("transactions")
-    cur.execute("Insert into transactions values ('{}','{}',{},'{}','{}','{}',{},{});".format(t_id, t_type, amount, description, c_id, e_id,currbalance,currbalance_to))
+    cur.execute("Insert into transactions values ('{}','{}',{},'{}','{}','{}','{}');".format(t_id, t_type, amount, description, c_id, e_id,currbalance))
     if(flag=='T'):
         cur.execute("Insert into to_from values('{}','{}','{}');".format(t_id,account_from_id,account_to_id))
     else:
@@ -525,18 +589,25 @@ def clear():
 
 
 def paused_clear():
-    trigger = input("Please press Enter to continue...")
-    if (trigger.strip() == "y"):
-        # for windows
-        if name == 'nt':
-            _ = system('cls')
+    while True:
+        trigger = input("Please press (y) to continue...")
+        if (trigger.strip() == "y"):
+            # for windows
+            if name == 'nt':
+                _ = system('cls')
+                break
 
-        # for mac and linux(here, os.name is 'posix')
+            # for mac and linux(here, os.name is 'posix')
+            else:
+                _ = 1
+                system('clear')
+                break
         else:
-            _ = 1
-            system('clear')
-    else:
-        print("Invalid option")
+            print("Invalid option")
+            print()
+            paused_clear()
+            pass
+
 
 def emp_signin():
     clear()
@@ -558,7 +629,7 @@ def emp_signin():
             print()
 
 def choose_any_account():
-    cur.execute("SELECT account_id,type,balance,name FROM account natural join customer;")
+    cur.execute("SELECT account_id,type,balance,c.name FROM account as a,customer as c where a.account_id=c.customer_id;")
     rec = cur.fetchall()
     l = []
     print()
@@ -572,33 +643,6 @@ def choose_any_account():
     l.sort()
     return l;
 
-def show_statment(a_id):
-    pass
-
-def show_pending(a_id):
-    print("Pending Transactions")
-    print()
-    print("Internal transaction Timeline")
-    print()
-    cur.execute("select transaction_id,type,amount,currbalance_from,currbalance_to,day,from_account,to_account from ((select * from transactions natural join to_from where from_account='{}') union (select * from transactions natural join to_from where to_account='{}')) as f where extract(month from day)=extract(month from current_timestamp) order by day;".format(a_id,a_id))
-    rec=cur.fetchall()
-    if(len(rec)==0):
-        print("No transactions have been made this month")
-    for row in rec:
-        if(row[1]=='Deposit'):
-            print("Date:",row[5],"    Type:Deposit","    Balance before:",(decimal.Decimal(row[3])-decimal.Decimal(row[2])),"   Amount added:+",row[2],"    Final Balance:",row[3])
-            print()
-        elif (row[1] == 'Withdrawl'):
-            print("Date:", row[5], "    Type:Withdrawal", "    Balance before:",(decimal.Decimal(row[3]) + decimal.Decimal(row[2])),"   Amount removed:-",row[2],"    Final Balance:",row[3])
-            print()
-        elif(row[1]=='Transfer'):
-            if(row[6]==a_id):
-                print("Date:", row[5], "    Type:Transfer", "    Balance before:",(decimal.Decimal(row[3]) + decimal.Decimal(row[2])), "   Amount removed:-", row[2],"    Final Balance:", row[3])
-                print()
-            else:
-                print("Date:", row[5], "    Type:Transfer", "    Balance before:",(decimal.Decimal(row[4]) - decimal.Decimal(row[2])), "   Amount added:+", row[2],"    Final Balance:", row[4])
-                print()
-
 def emp(e_id):
     cur.execute("Select name,position from employee where employee_id='{}'".format(e_id))
     rec = cur.fetchone()
@@ -609,16 +653,16 @@ def emp(e_id):
         clear()
         logo()
         print()
-        print(" Welcome Back",rec[0],"   Position:",rec[1], "    manager:",manager)
+        print(" Welcome Back",rec[0],"   Position:",rec[1])
         print()
         print("Choose from the options below to manage or create accounts")
         print(" 1.Execute deposit from any account")
         print(" 2.Execute withdrawal from any account")
         print(" 3.Execute transfer between any two accounts")
         print(" 4.Execute external transfer between accounts and external account")
-        print(" 5.View statment for an account(MANAGER ONLY)")
+        print(" 5.View statement for an account(MANAGER ONLY)")
         print(" 6.View pending transactions for an account(MANAGER ONLY)")
-        print(" 7.View account Analytics(MANAGER ONLY)")
+        print(" 7.View account Analytics")
         print(" 8.Log out")
         print()
         choose=input("Choose an option here: ")
@@ -633,13 +677,15 @@ def emp(e_id):
                     print()
                     if (decimal.Decimal(amount.strip()) <= 0):
                         print("Amount to be deposited is less than or equals to $0")
-                        print(("Returning to home screen"))
+                        paused_clear()
                         break
                     description = input("Please write a short description: ")
                     deposit(amount, acc_id,description,e_id=e_id)
                     break
                 else:
                     print("Invalid Id's have been entered, returning to main screen")
+                    print()
+                    paused_clear()
                     break
         elif(choose.strip()=='2'):
             l=choose_any_account()
@@ -651,7 +697,7 @@ def emp(e_id):
                     print()
                     if(decimal.Decimal(amount)>=0 and check_balance(amount,acc_id)==-1):
                         print("Amount to be withdrawn greater than account balance")
-                        print(("Returning to home screen"))
+                        paused_clear()
                         break
                     description = input("Please write a short description: ")
                     withdraw(amount, acc_id,description,e_id=e_id)
@@ -671,7 +717,7 @@ def emp(e_id):
                     print()
                     if (decimal.Decimal(amount.strip())>=0 and check_balance(amount, acc_from_id)):
                         print("Amount to be withdrawn greater than account balance")
-                        print(("Returning to home screen"))
+                        paused_clear()
                         break
                     description = input("Please write a short description: ")
                     loc_transfer(acc_from_id, acc_to_id, description,amount,e_id=e_id)
@@ -696,7 +742,7 @@ def emp(e_id):
                     print()
                     if (check_balance(amount, acc_from_id)):
                         print("Transfer amount is greater than account balance")
-                        print(("Returning to home screen"))
+                        paused_clear()
                         break
                     description = input("Please write a short description: ")
                     ext_transfer(acc_from_id, bank, account_number, routing_number, amount, description,e_id=e_id)
@@ -705,41 +751,18 @@ def emp(e_id):
                     print("Invalid Id's have been entered, returning to main screen")
                     break
         elif (choose.strip() == '5'):
-            if(manager==False):
-                print()
-                print("Unauthorized access")
-                print()
-                paused_clear()
-            else:
-                pass
+            pass
         elif (choose.strip() == '6'):
-            if (manager == False):
-                print()
-                print("Unauthorized access")
-                print()
-                paused_clear()
-            else:
-                l=choose_any_account()
-                id=input("Choose an account to view the pending transactions for:")
-                if(int(id.strip()) in l):
-                    show_pending(id)
-                    paused_clear()
-                else:
-                    print("Invalid input , returning to main screen")
-                    paused_clear()
+            pass
         elif(choose.strip()=='7'):
-            if (manager == False):
-                print()
-                print("Unauthorized access")
-                print()
-                paused_clear()
-            else:
-                pass
+            pass
         elif (choose.strip() == '8'):
             print("LOGGING OUT...")
             break
         else:
-            print("INVALID OPTION")
+            print("Invalid option")
+            print()
+            paused_clear()
 
 while True:
 
@@ -771,7 +794,11 @@ while True:
         exit()
     else:
         print("Invalid option")
+        print()
+        paused_clear()
 
 conn.close()
 print("Connection closed")
 
+## delete account option
+## check if account balance is 0 before deleting the account
