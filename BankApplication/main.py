@@ -147,7 +147,7 @@ def signin():
 # this is the function for the customer interface
 
 def show_accounts(c_id):
-    cur.execute("SELECT * FROM account WHERE customer_id = '{}';".format(c_id))
+    cur.execute("SELECT * FROM account WHERE customer_id = '{}' AND status = 'Active';".format(c_id))
     rec = cur.fetchall()
     l = []
     print()
