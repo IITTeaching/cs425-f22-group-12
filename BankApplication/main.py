@@ -296,17 +296,7 @@ def cust(c_id):
         elif (choose.strip() == '5'):
             cur.execute("SELECT * FROM account WHERE customer_id = '{}';".format(c_id))
             rec = cur.fetchall()
-            l = []
-            print()
-            print("From accounts: ")
-            print("  ID.   Type       Balance")
-            for row in rec:
-                l.append(int(row[0]))
-                if (row[1] == 'C'):
-                    print(" ", row[0], ".  ", "Checking  ", row[2])
-                elif (row[1] == 'S'):
-                    print(" ", row[0], ".  ", "Saving    ", row[2])
-            l.sort()
+            l = show_accounts(c_id)
 
             while True:
                 acc_from_id = input("\nChoose the id of the account you want to transfer the money from: ")
@@ -343,7 +333,40 @@ def cust(c_id):
 
         # SHOW TRANSACTIONS
         elif (choose.strip() == '7'):
+            clear()
+            logo()
+            print()
+            print("Transactions: ")
+            print()
+            year = input("Please enter a year (YYYY): ")
+            print()
+            month = input("Please enter a month (MM): ")
+            start_date = "{}-{}-01".format(year, month)
+
+            '''
+            cur.execute("SELECT * FROM account WHERE customer_id = '{}' AND status = 'Active';".format(c_id))
+            rec = cur.fetchall()
+            l = []
+            print()
+            print("  ID.   Type       Balance")
+            for row in rec:
+                l.append(int(row[0]))
+                if (row[1] == 'C'):
+                    print(" ", row[0], ".  ", "Checking  ", row[2])
+                elif (row[1] == 'S'):
+                    print(" ", row[0], ".  ", "Saving    ", row[2])
+            l.sort()
+            '''
+            cur.execute("SELECT transaction_id, type, amount, description FROM transactions WHERE day BETWEEN '{}' AND date '{}' + interval '1 month'".format(start_date.strip(), start_date.strip()))
+            rec = cur.fetchall()
+            print("ID    Type          Amount      Description ")
+            for item in rec:
+                print("{0: <6}{1: <14}{2: <12}{3: <20}".format(item[0], item[1], item[2], item[3]))
+            print()
+            paused_clear()
             pass
+
+
 
         # CLOSE ACCOUNT
         elif (choose.strip() == '8'):
