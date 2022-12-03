@@ -343,6 +343,10 @@ def cust(c_id):
             print()
             account = input("please enter the ID of the account you want to view transactions for: ")
             print()
+            print("Please keep in mind that the transactions will be shown for the previous month"
+                  "\nincluding the first of the selected month"
+                  "\nChoose the Year and Month accordingly")
+            print()
             year = input("Please enter a year (YYYY): ")
             print()
             month = input("Please enter a month (MM): ")
@@ -755,6 +759,24 @@ def branch_total_balances(branch):
         print()
         paused_clear()
 
+
+def number_of_transactions(branch, start_date, end_date):
+    cur.execute("SELECT COUNT(transaction_id) AS total_transactions FROM transactions NATURAL JOIN customer WHERE branch_id = '{}' AND day BETWEEN date '{}' - interval '1 month' AND '{}'".format(branch, end_date.strip(), start_date))
+    rec1 = cur.fetchone()
+    cur.execute("SELECT COUNT(transaction_id) AS total_transactions FROM transactions NATURAL JOIN employee WHERE branch_id = '{}' AND day BETWEEN date '{}' - interval '1 month' AND '{}'".format(branch, end_date.strip(), start_date))
+    rec2 = cur.fetchone()
+    total = rec1[0] + rec2[0]
+    if (total > 0):
+        print()
+        print("The total number of transactions made at this branch during the specified month is: {} Transactions".format(total))
+        print()
+        pass
+    else:
+        print()
+        print("There has been no transactions made at this branch during the specified month.")
+        print()
+        pass
+
 def emp(e_id):
     cur.execute("Select name,position from employee where employee_id='{}'".format(e_id))
     rec = cur.fetchone()
@@ -912,13 +934,11 @@ def emp(e_id):
                 print("Analytics: ")
                 print()
                 # Examples of queries we can have in the analytics.
-                # TODO: View branch total customers' balances
-                # TODO: View transaction numbers for each branch for a single month
-                # TODO: View top 3 biggest accounts in each branch
+                # TODO: View branch total customers' balances ... DONE
+                # TODO: View transaction numbers for each branch for a single month ... DONE
 
                 print(" 1.View branch total customers' balances")
                 print(" 2.View transaction numbers for each branch for a single month")
-                print(" 3.View top 3 biggest accounts in each branch")
                 print()
                 option = input("Please choose an option: ")
                 if (option == '1'):
@@ -932,8 +952,24 @@ def emp(e_id):
                     print()
                     pass
                 elif (option == '2'):
-                    pass
-                elif (option == '3'):
+                    clear()
+                    logo()
+                    print()
+                    print("Number of transactions: ")
+                    print()
+                    branch = choose_b()
+                    print()
+                    print("Please keep in mind that the transactions will be shown for the previous month"
+                          "\nincluding the first of the selected month"
+                          "\nChoose the Year and Month accordingly")
+                    print()
+                    year = input("Please enter a year (YYYY): ")
+                    print()
+                    month = input("Please enter a month (MM): ")
+                    start_date = "{}-{}-01".format(year, month)
+                    end_date = "{}-{}-02".format(year, month)
+                    number_of_transactions(branch, start_date, end_date)
+                    paused_clear()
                     pass
                 else:
                     print("INVALID OPTION")
