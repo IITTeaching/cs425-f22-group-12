@@ -6,7 +6,7 @@ from decimal import Decimal
 
 conn = psycopg2.connect(
     host="localhost",
-    database="Bank",
+    database="project",
     user="postgres",
     password="")
 cur=conn.cursor()
