@@ -8,7 +8,7 @@ conn = psycopg2.connect(
     host="localhost",
     database="Bank",
     user="postgres",
-    password="030971")
+    password="")
 cur=conn.cursor()
 def create_new_id(table_name):
     l=[]
@@ -34,7 +34,7 @@ def choose_b():
         print(" ",row[0], ".", row[1], row[2])
     l.sort()
     while True:
-        add_id = input("\nChoose a Home branch: ")
+        add_id = input("\nChoose a branch: ")
         if (int(add_id.strip()) <= len(l) and int(add_id.strip()) > 0):
             return add_id
         else:
@@ -121,7 +121,6 @@ def create_new():
         paused_clear()
         print()
         return c_id
-        # Need to have a pause here so the user can see their ID before moving to the next screen.
     except(Exception, psycopg2.DatabaseError) as e:
         print("error:", e)
         print("Please Try again")
@@ -182,6 +181,7 @@ def cust(c_id):
         print(" 9.Log out")
         print()
         choose=input("Choose an option here: ")
+
         # CREATING A NEW ACCOUNT
         if(choose.strip()=='1'):
             clear()
@@ -347,8 +347,9 @@ def cust(c_id):
             print()
             month = input("Please enter a month (MM): ")
             start_date = "{}-{}-01".format(year, month)
+            end_date = "{}-{}-02".format(year, month)
 
-            show_statment(account, start_date)
+            show_statment(account, start_date, end_date)
             paused_clear()
             pass
 
@@ -374,6 +375,7 @@ def cust(c_id):
                 logo()
                 print()
                 print("Account has been deleted successfully!")
+                print()
                 paused_clear()
                 pass
             else:
@@ -450,7 +452,7 @@ def deposit(amount, acc_id,description,c_id='NULL',e_id='NULL'):
     try:
         clear()
         logo()
-        cur.execute("SELECT * FROM account WHERE account_id = '{}';".format(acc_id))
+        cur.execute("SELECT * FROM account WHERE account_id = '{}' AND status = 'Active';".format(acc_id))
         rec = cur.fetchone()
         t_type = 'Deposit'
         old_amount = rec[2]
@@ -460,6 +462,7 @@ def deposit(amount, acc_id,description,c_id='NULL',e_id='NULL'):
         conn.commit()
         print()
         print("Amount deposited successfully!")
+        print()
         paused_clear()
         pass
     except(Exception, psycopg2.DatabaseError) as e:
@@ -591,7 +594,7 @@ def clear():
 
 def paused_clear():
     while True:
-        trigger = input("Please press (y) to continue...")
+        trigger = input("Please press (y) then enter to continue...")
         if (trigger.strip() == "y"):
             # for windows
             if name == 'nt':
@@ -635,6 +638,7 @@ def choose_any_account():
     l = []
     print()
     print("  ID.   Type       Balance")
+    print()
     for row in rec:
         l.append(int(row[0]))
         if (row[1] == 'C'):
@@ -644,11 +648,11 @@ def choose_any_account():
     l.sort()
     return l;
 
-def show_statment(a_id, date):
+def show_statment(a_id, start_date, end_date):
     print()
     cur.execute(
         "select transaction_id,type,amount,currbalance_from,currbalance_to,day,from_account,to_account from ((select * from transactions natural join to_from where from_account='{}') union (select * from transactions natural join to_from where to_account='{}')) as f WHERE f.day BETWEEN date '{}' - interval '1 month' AND '{}' ORDER BY day;".format(
-            a_id, a_id, date.strip(), date.strip()))
+            a_id, a_id, end_date.strip(), start_date.strip()))
     rec = cur.fetchall()
     if (len(rec) == 0):
         print("No transactions have been made this month")
@@ -676,9 +680,12 @@ def show_statment(a_id, date):
                 print()
             else:
                 print("{0}{1: <18}{2: <16}{3: <10}{4: <10}".format(row[5], "    Transfer In",
-                                                                        (decimal.Decimal(row[3]) - decimal.Decimal(row[2])),
-                                                                        row[2], row[3]))
+                                                                        (decimal.Decimal(row[4]) - decimal.Decimal(row[2])),
+                                                                        row[2], row[4]))
                 print()
+    ending_balance = rec[-1][3]
+    print("The balance at the end of the month is: ${}".format(ending_balance))
+    print()
 
 def show_pending(a_id):
     print("Pending Transactions")
@@ -689,6 +696,7 @@ def show_pending(a_id):
     rec=cur.fetchall()
     if(len(rec)==0):
         print("No transactions have been made this month")
+    '''
     for row in rec:
         if(row[1]=='Deposit'):
             print("Date:",row[5],"    Type:Deposit","    Balance before:",(decimal.Decimal(row[3])-decimal.Decimal(row[2])),"   Amount added:+",row[2],"    Final Balance:",row[3])
@@ -703,6 +711,49 @@ def show_pending(a_id):
             else:
                 print("Date:", row[5], "    Type:Transfer", "    Balance before:",(decimal.Decimal(row[4]) - decimal.Decimal(row[2])), "   Amount added:+", row[2],"    Final Balance:", row[4])
                 print()
+    '''
+    print()
+    print("Date          Type          Balance before  Amount    Balance after")
+    print()
+    for row in rec:
+        if (row[1] == 'Deposit'):
+            print("{0}{1: <18}{2: <16}{3: <10}{4: <10}".format(row[5], "    Deposit",
+                                                               (decimal.Decimal(row[3]) - decimal.Decimal(row[2])),
+                                                               row[2], row[3]))
+            print()
+        elif (row[1] == 'Withdrawl'):
+            print("{0}{1: <18}{2: <16}{3: <10}{4: <10}".format(row[5], "    Withdrawal",
+                                                               (decimal.Decimal(row[3]) + decimal.Decimal(row[2])),
+                                                               row[2], row[3]))
+            print()
+        elif (row[1] == 'Transfer'):
+            if (row[6] == a_id):
+                print("{0}{1: <18}{2: <16}{3: <10}{4: <10}".format(row[5], "    Transfer Out",
+                                                                   (decimal.Decimal(row[3]) + decimal.Decimal(row[2])),
+                                                                   row[2], row[3]))
+                print()
+            else:
+                print("{0}{1: <18}{2: <16}{3: <10}{4: <10}".format(row[5], "    Transfer In",
+                                                                   (decimal.Decimal(row[4]) - decimal.Decimal(row[2])),
+                                                                   row[2], row[4]))
+                print()
+    ending_balance = rec[-1][3]
+    print("The balance at the end of the month is: ${}".format(ending_balance))
+    print()
+
+
+def branch_total_balances(branch):
+    cur.execute("SELECT SUM(balance) AS total_balance FROM account NATURAL JOIN customer WHERE branch_id = '{}' AND status = 'Active'".format(branch.strip()))
+    rec = cur.fetchone()
+    total = rec[0]
+    if (total != None):
+        print("The total amount of funds at this branch is: ${}".format(total))
+        print()
+        paused_clear()
+    else:
+        print("The total amount of funds at this branch is: $ 0.00")
+        print()
+        paused_clear()
 
 def emp(e_id):
     cur.execute("Select name,position from employee where employee_id='{}'".format(e_id))
@@ -726,7 +777,9 @@ def emp(e_id):
         print(" 7.View account Analytics")
         print(" 8.Log out")
         print()
-        choose=input("Choose an option here: ")
+        choose = input("Choose an option here: ")
+
+        # DEPOSIT
         if(choose.strip()=='1'):
             print()
             l=choose_any_account()
@@ -748,6 +801,8 @@ def emp(e_id):
                     print()
                     paused_clear()
                     break
+
+        # WITHDRAWAL
         elif(choose.strip()=='2'):
             l=choose_any_account()
             while True:
@@ -766,6 +821,8 @@ def emp(e_id):
                 else:
                     print("Invalid Id's have been entered, returning to main screen")
                     break
+
+        # TRANSFER
         elif (choose.strip() == '3'):
             while True:
                 l = choose_any_account()
@@ -787,6 +844,7 @@ def emp(e_id):
                     print("Invalid Id's have been entered, returning to main screen")
                     break
 
+        # EXTERNAL TRANSFER
         elif (choose.strip() == '4'):
             l=choose_any_account()
             while True:
@@ -811,6 +869,8 @@ def emp(e_id):
                 else:
                     print("Invalid Id's have been entered, returning to main screen")
                     break
+
+        # VIEW STATEMENT
         elif (choose.strip() == '5'):
             if (manager == False):
                 print()
@@ -819,6 +879,8 @@ def emp(e_id):
                 paused_clear()
             else:
                 pass
+
+        # VIEW PENDING TRANSACTIONS
         elif (choose.strip() == '6'):
             if (manager == False):
                 print()
@@ -827,13 +889,16 @@ def emp(e_id):
                 paused_clear()
             else:
                 l = choose_any_account()
-                id = input("Choose an account to view the pending transactions for:")
+                print()
+                id = input("Choose an account to view the pending transactions for: ")
                 if (int(id.strip()) in l):
                     show_pending(id)
                     paused_clear()
                 else:
                     print("Invalid input , returning to main screen")
                     paused_clear()
+
+        # ANALYTICS
         elif (choose.strip() == '7'):
             if (manager == False):
                 print()
@@ -841,7 +906,42 @@ def emp(e_id):
                 print()
                 paused_clear()
             else:
+                clear()
+                logo()
+                print()
+                print("Analytics: ")
+                print()
+                # Examples of queries we can have in the analytics.
+                # TODO: View branch total customers' balances
+                # TODO: View transaction numbers for each branch for a single month
+                # TODO: View top 3 biggest accounts in each branch
+
+                print(" 1.View branch total customers' balances")
+                print(" 2.View transaction numbers for each branch for a single month")
+                print(" 3.View top 3 biggest accounts in each branch")
+                print()
+                option = input("Please choose an option: ")
+                if (option == '1'):
+                    clear()
+                    logo()
+                    print("Branch total: ")
+                    print()
+                    branch = choose_b()
+                    print()
+                    branch_total_balances(branch)
+                    print()
+                    pass
+                elif (option == '2'):
+                    pass
+                elif (option == '3'):
+                    pass
+                else:
+                    print("INVALID OPTION")
+                    paused_clear()
+                    pass
                 pass
+
+        # LOGOUT
         elif (choose.strip() == '8'):
             print("LOGGING OUT...")
             paused_clear()
