@@ -1,4 +1,5 @@
 import decimal
+import time
 
 import psycopg2
 from os import system, name
@@ -797,7 +798,8 @@ def emp(e_id):
         print(" 5.View statement for an account(MANAGER ONLY)")
         print(" 6.View pending transactions for an account(MANAGER ONLY)")
         print(" 7.View account Analytics")
-        print(" 8.Log out")
+        print(" 8.Apply overdraft fees(Checking balance<50 or Saving balance<500)")
+        print(" 9.Log out")
         print()
         choose = input("Choose an option here: ")
 
@@ -900,7 +902,32 @@ def emp(e_id):
                 print()
                 paused_clear()
             else:
-                pass
+                clear()
+                logo()
+                print()
+                print("Transactions: ")
+                print()
+                print("     Accounts: ")
+                l=choose_any_account()
+                print()
+                account = input("please enter the ID of the account you want to view transactions for: ")
+                print()
+                if(int(account.strip()) not in l):
+                    print("Invalid ID entered, returning to home screen")
+                    paused_clear()
+                    continue
+                print("Please keep in mind that the transactions will be shown for the previous month"
+                      "\nincluding the first of the selected month"
+                      "\nChoose the Year and Month accordingly")
+                print()
+                year = input("Please enter a year (YYYY): ")
+                print()
+                month = input("Please enter a month (MM): ")
+                start_date = "{}-{}-01".format(year, month)
+                end_date = "{}-{}-02".format(year, month)
+
+                show_statment(account, start_date, end_date)
+                paused_clear()
 
         # VIEW PENDING TRANSACTIONS
         elif (choose.strip() == '6'):
@@ -978,7 +1005,32 @@ def emp(e_id):
                 pass
 
         # LOGOUT
-        elif (choose.strip() == '8'):
+        elif(choose.strip()=='8'):
+            if (manager == False):
+                print()
+                print("Unauthorized access")
+                print()
+                paused_clear()
+                continue
+            logo()
+            print("Welcome to the overdraft fees menu")
+            print("Apply a overdraft fees of 50$ if the balance in the savings account is less than 200$")
+            print("Apply a overdraft fees of 20$ if the balance in the checking account is less than 50$")
+            print("Do you wish to proceed......")
+            paused_clear()
+            logo()
+            try:
+                print("Applying overdraft Fees......")
+                cur.execute(" update account set balance = balance - 50 where customer_id in (select customer_id from customer as c,employee as e where c.branch_id=e.branch_id and e.employee_id='{}') and type='S' and balance<200;".format(e_id))
+                cur.execute(" update account set balance = balance - 20 where customer_id in (select customer_id from customer as c,employee as e where c.branch_id=e.branch_id and e.employee_id='{}') and type='C' and balance<50;".format(e_id))
+                conn.commit()
+                time.sleep(4)
+                #need to find a way to apply overdraft fees without making balance negative
+                print("Overdraft fees have been applied")
+                paused_clear()
+            except(Exception, psycopg2.DatabaseError) as e:
+                print("ERROR FOUND:",e)
+        elif (choose.strip() == '9'):
             print("LOGGING OUT...")
             paused_clear()
             break
