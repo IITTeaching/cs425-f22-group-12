@@ -41,7 +41,6 @@ Create table Account(
 	status varchar(10),
 	check(status='Active' or Status='Closed'),
 	--include check statement for Type and balance
-	check(balance>=0),
 	check(type='C' or type='S')
 	);
 
